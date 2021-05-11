@@ -8,8 +8,9 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-install.packages("tidytuesdayR")
+#install.packages("tidytuesdayR")
 library(shiny)
+library(tidyverse)
 ```
 
 ### Data call###
@@ -27,3 +28,24 @@ vegtable_oil <-tuesdata$vegetable_oil
 1. A map of forest loss by country filterable by year (I have never done a map in R before)
 2. Tree map (because we like those) of soybean use filterable by year and faceted by continent (means i will need to join in a continent list)
 3. Forecast of future rainforest loss in Brazil for the next 10 years. 
+
+###Source###
+paper is here: https://ourworldindata.org/forests-and-deforestation
+
+
+### Tree map showing the changes in soybean use by continet over time
+1. I don't like how they have grouped continents in this code so I am joining my own list in
+source is here: https://pkgstore.datahub.io/JohnSnowLabs/country-and-continent-codes-list/country-and-continent-codes-list-csv_csv/data/b7876b7f496677669644f3d1069d3121/country-and-continent-codes-list-csv_csv.csv
+
+2. Next I look for a primary key iD to join the two on, in this case its the 3 letter code, I do an inner join so that all the things I dont want in soybean_farming are not included. Then Ill select what we need. 
+
+3. Some countries exist in two continents Ill create a list of allocations so I can see where it is going wrong. 
+```{r}
+continent_list <-read.csv("Continent_list.csv")
+
+soybean_farming <- soybean_farming %>% 
+                                      inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
+                                      select(entity,code,year,human_food,animal_feed,processed,Continent_Code,`ï..Continent_Name`)%>%
+                                      rename(Continent=`ï..Continent_Name`)
+```
+
