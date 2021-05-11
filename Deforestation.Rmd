@@ -1,0 +1,29 @@
+---
+title: "Deforestation"
+author: "Hollie Rawlings"
+date: "11/05/2021"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("tidytuesdayR")
+library(shiny)
+```
+
+### Data call###
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2021-04-06')
+
+forest_data <- tuesdata$forest
+forest_area_data <-tuesdata$forest_area
+brazil_forest_loss <-tuesdata$brazil_loss
+soybean_farming <-tuesdata$soybean_use
+vegtable_oil <-tuesdata$vegetable_oil
+```
+
+###Ideas###
+1. A map of forest loss by country filterable by year (I have never done a map in R before)
+2. Tree map (because we like those) of soybean use filterable by year and faceted by continent (means i will need to join in a continent list)
+3. Forecast of future rainforest loss in Brazil for the next 10 years. 
