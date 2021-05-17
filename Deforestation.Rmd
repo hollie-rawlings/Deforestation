@@ -17,13 +17,13 @@ library(janitor)
 
 ### Data call###
 ```{r}
-tuesdata <- tidytuesdayR::tt_load('2021-04-06')
+#tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
-forest_data <- tuesdata$forest
-forest_area_data <-tuesdata$forest_area
-brazil_forest_loss <-tuesdata$brazil_loss
+#forest_data <- tuesdata$forest
+#forest_area_data <-tuesdata$forest_area
+#brazil_forest_loss <-tuesdata$brazil_loss
 soybean_farming <-tuesdata$soybean_use
-vegtable_oil <-tuesdata$vegetable_oil
+#vegtable_oil <-tuesdata$vegetable_oil
 ```
 
 ###Ideas###
@@ -42,7 +42,7 @@ source is here: https://pkgstore.datahub.io/JohnSnowLabs/country-and-continent-c
 2. Next I look for a primary key iD to join the two on, in this case its the 3 letter code, I do an inner join so that all the things I don't want in soybean_farming are not included. Then Ill select what we need. 
 
 3. Some countries exist in two continents Ill create a list of allocations so I can see where it is going wrong. 
-4. Then I mutate the continet with case_when to give it one allocation
+4. Then I mutate the continent with case_when to give it one allocation
 ```{r}
 continent_list <-read.csv("Continent_list.csv")
 
@@ -77,82 +77,69 @@ soybean_farming <- soybean_farming %>%
 ## Data processing for suburst chart 
 1. As a sample to just get myself going I have limited the year to 2013
 2. Eventually year will go in as a slider or dropdown in the shiny app
-3. Generate an ID column which combines continent and country to form the path
-
-
-Parents = Continent
-labels = entity
-id = pathway between these two things
+3. I remove everything that we don't need in the data file and re-order it specifically for the data wrangling function
 ```{r}
-unique_continents <-unique(soybean_farming$Continent)
-unique_continents <-as.data.frame(unique_continents)
-
-
-sapply(soybean_farming,class)
-
-
-soybean_farming <- soybean_farming %>% 
-                                      filter(year == "2013")%>%
-                                      mutate(labels = entity)%>%
-                                      mutate(parent = Continent)%>%
-                                      drop_na(human_food,animal_feed,processed)%>%
-                                      mutate(human_food=as.numeric(human_food))%>%
-                                      unite(id, c("parent","labels"),sep="-",remove=FALSE)%>%
-                                      add_row(labels = "Europe",.before =1)%>%
-                                      add_row(labels = "Africa",.before =1)%>%
-                                      add_row(labels = "North America",.before =1)%>%
-                                      add_row(labels = "South America",.before =1)%>%
-                                      add_row(labels = "Oceania",.before =1)%>%
-                                      add_row(labels = "Asia",.before =1)%>%
+soybean_farming <- soybean_farming %>%
+                                        filter(year == "2013")%>%
+                                        select(-year,-code)%>%
+                                        pivot_longer(cols =c(human_food,animal_feed,processed))%>%
+                                        select(Continent,entity,name,value)
                                       
-                                      mutate(id = case_when(
-                                        is.na(id) ~ labels,
-                                        TRUE ~ id
-                                      ))
-                                      
-##Add totals to continent columns 
-
-Soybean_farming_human_food_total  <- soybean_farming %>%
-                                                          filter(year == "2013")%>%
-                                                          group_by(Continent)%>%
-                                                          summarize(human_food_total = sum(human_food))
-
-Soybean_farming_animal_feed_total  <- soybean_farming %>%
-                                                          filter(year == "2013")%>%
-                                                          group_by(Continent)%>%
-                                                          summarize(animal_feed_total = sum(animal_feed))
-
-Soybean_farming_processed_total  <- soybean_farming %>%
-                                                          filter(year == "2013")%>%
-                                                          group_by(Continent)%>%
-                                                          summarize(processed_total = sum(processed))
-
-
-Soybean_Farming_Totals <- Soybean_farming_human_food_total %>%
-                                                              left_join(Soybean_farming_animal_feed_total,by="Continent")%>%
-                                                              left_join(Soybean_farming_processed_total, by="Continent")
-
-soybean_farming <- soybean_farming %>% 
-                                        left_join(Soybean_Farming_Totals,by=c("id"="Continent"))%>% 
-                                        mutate(human_food = coalesce(human_food,human_food_total))%>%
-                                        mutate(animal_feed =coalesce(animal_feed,animal_feed_total))%>%
-                                        mutate(processed =coalesce(processed,processed_total))%>%
-                                        select(human_food,animal_feed,processed,id,labels,parent)
-                                    
-sapply(soybean_farming,class)                                     
-
-pivoted_soybean_farming_table <-pivot_longer(soybean_farming,cols=c("human_food","animal_feed","processed"))
-## change labels and id so that this all maps up
 ```
 
+## Function 
+```{r}
+as.sunburstDF <- function(DF, valueCol = NULL){
+  require(data.table)
+  
+  colNamesDF <- names(DF)
+  
+  if(is.data.table(DF)){
+    DT <- copy(DF)
+  } else {
+    DT <- data.table(DF, stringsAsFactors = FALSE)
+  }
+  
+  DT[, root := "Total"]
+  colNamesDT <- names(DT)
+  
+  if(is.null(valueCol)){
+    setcolorder(DT, c("root", colNamesDF))
+  } else {
+    setnames(DT, valueCol, "values", skip_absent=TRUE)
+    setcolorder(DT, c("root", setdiff(colNamesDF, valueCol), "values"))
+  }
+  
+  hierarchyCols <- setdiff(colNamesDT, "values")
+  hierarchyList <- list()
+  
+  for(i in seq_along(hierarchyCols)){
+    currentCols <- colNamesDT[1:i]
+    if(is.null(valueCol)){
+      currentDT <- unique(DT[, ..currentCols][, values := .N, by = currentCols], by = currentCols)
+    } else {
+      currentDT <- DT[, lapply(.SD, sum, na.rm = TRUE), by=currentCols, .SDcols = "values"]
+    }
+    setnames(currentDT, length(currentCols), "labels")
+    hierarchyList[[i]] <- currentDT
+  }
+  
+  hierarchyDT <- rbindlist(hierarchyList, use.names = TRUE, fill = TRUE)
+  
+  parentCols <- setdiff(names(hierarchyDT), c("labels", "values", valueCol))
+  hierarchyDT[, parents := apply(.SD, 1, function(x){fifelse(all(is.na(x)), yes = NA_character_, no = paste(x[!is.na(x)], sep = ":", collapse = " - "))}), .SDcols = parentCols]
+  hierarchyDT[, ids := apply(.SD, 1, function(x){paste(x[!is.na(x)], collapse = " - ")}), .SDcols = c("parents", "labels")]
+  hierarchyDT[, c(parentCols) := NULL]
+  return(hierarchyDT)
+}
+sunburstDF <- as.sunburstDF(soybean_farming, valueCol = "value")
+```
 ### Radial treemap 
 
 
 ```{r}
-
-fig <- plot_ly(soybean_farming, ids = soybean_farming$id, labels = soybean_farming$labels, parents = soybean_farming$parent,values=soybean_farming$human_food,type = 'sunburst')
-
-fig
+sunburst <-plot_ly(data = sunburstDF, ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total')
+sunburst
 
 ```
 ##Vingete 
