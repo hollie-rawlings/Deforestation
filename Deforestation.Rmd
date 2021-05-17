@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("tidytuesdayR")
 library(shiny)
 library(tidyverse)
+library(plotly)
+library(janitor)
 ```
 
 ### Data call###
@@ -40,17 +42,17 @@ source is here: https://pkgstore.datahub.io/JohnSnowLabs/country-and-continent-c
 2. Next I look for a primary key iD to join the two on, in this case its the 3 letter code, I do an inner join so that all the things I don't want in soybean_farming are not included. Then Ill select what we need. 
 
 3. Some countries exist in two continents Ill create a list of allocations so I can see where it is going wrong. 
+4. Then I mutate the continet with case_when to give it one allocation
 ```{r}
 continent_list <-read.csv("Continent_list.csv")
 
 soybean_farming <- soybean_farming %>% 
                                       inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
-                                      select(entity,code,year,human_food,animal_feed,processed,Continent_Code,`ï..Continent_Name`)%>%
+                                      select(entity,code,year,human_food,animal_feed,processed,`ï..Continent_Name`)%>%
                                       rename(Continent=`ï..Continent_Name`)
 
 continent_allocation <- soybean_farming %>% select(entity,Continent)%>%
                                                                         unique()
-
 ## These countries are 	Armenia,Azerbaijan,Cyprus,Georgia,Kazakhstan,Russia,Turkey 
 ## There are not many, so I can use a case when to recode them. 
 ## I'm no geography expert so I may not be right, If this were go go in a paper I would have to include a footnote about these allocations
@@ -72,3 +74,169 @@ soybean_farming <- soybean_farming %>%
 
 ```
 
+## Data processing for suburst chart 
+1. As a sample to just get myself going I have limited the year to 2013
+2. Eventually year will go in as a slider or dropdown in the shiny app
+3. Generate an ID column which combines continent and country to form the path
+
+
+Parents = Continent
+labels = entity
+id = pathway between these two things
+```{r}
+unique_continents <-unique(soybean_farming$Continent)
+unique_continents <-as.data.frame(unique_continents)
+
+
+sapply(soybean_farming,class)
+
+
+soybean_farming <- soybean_farming %>% 
+                                      filter(year == "2013")%>%
+                                      mutate(labels = entity)%>%
+                                      mutate(parent = Continent)%>%
+                                      drop_na(human_food,animal_feed,processed)%>%
+                                      mutate(human_food=as.numeric(human_food))%>%
+                                      unite(id, c("parent","labels"),sep="-",remove=FALSE)%>%
+                                      add_row(labels = "Europe",.before =1)%>%
+                                      add_row(labels = "Africa",.before =1)%>%
+                                      add_row(labels = "North America",.before =1)%>%
+                                      add_row(labels = "South America",.before =1)%>%
+                                      add_row(labels = "Oceania",.before =1)%>%
+                                      add_row(labels = "Asia",.before =1)%>%
+                                      
+                                      mutate(id = case_when(
+                                        is.na(id) ~ labels,
+                                        TRUE ~ id
+                                      ))
+                                      
+##Add totals to continent columns 
+
+Soybean_farming_human_food_total  <- soybean_farming %>%
+                                                          filter(year == "2013")%>%
+                                                          group_by(Continent)%>%
+                                                          summarize(human_food_total = sum(human_food))
+
+Soybean_farming_animal_feed_total  <- soybean_farming %>%
+                                                          filter(year == "2013")%>%
+                                                          group_by(Continent)%>%
+                                                          summarize(animal_feed_total = sum(animal_feed))
+
+Soybean_farming_processed_total  <- soybean_farming %>%
+                                                          filter(year == "2013")%>%
+                                                          group_by(Continent)%>%
+                                                          summarize(processed_total = sum(processed))
+
+
+Soybean_Farming_Totals <- Soybean_farming_human_food_total %>%
+                                                              left_join(Soybean_farming_animal_feed_total,by="Continent")%>%
+                                                              left_join(Soybean_farming_processed_total, by="Continent")
+
+soybean_farming <- soybean_farming %>% 
+                                        left_join(Soybean_Farming_Totals,by=c("id"="Continent"))%>% 
+                                        mutate(human_food = coalesce(human_food,human_food_total))%>%
+                                        mutate(animal_feed =coalesce(animal_feed,animal_feed_total))%>%
+                                        mutate(processed =coalesce(processed,processed_total))%>%
+                                        select(human_food,animal_feed,processed,id,labels,parent)
+                                    
+sapply(soybean_farming,class)                                     
+
+pivoted_soybean_farming_table <-pivot_longer(soybean_farming,cols=c("human_food","animal_feed","processed"))
+## change labels and id so that this all maps up
+```
+
+### Radial treemap 
+
+
+```{r}
+
+fig <- plot_ly(soybean_farming, ids = soybean_farming$id, labels = soybean_farming$labels, parents = soybean_farming$parent,values=soybean_farming$human_food,type = 'sunburst')
+
+fig
+
+```
+##Vingete 
+
+```{r}
+d <- data.frame(
+    ids = c(
+    "North America", "Europe", "Australia", "North America - Football", "Soccer",
+    "North America - Rugby", "Europe - Football", "Rugby",
+    "Europe - American Football","Australia - Football", "Association",
+    "Australian Rules", "Autstralia - American Football", "Australia - Rugby",
+    "Rugby League", "Rugby Union"
+  ),
+  labels = c(
+    "North<br>America", "Europe", "Australia", "Football", "Soccer", "Rugby",
+    "Football", "Rugby", "American<br>Football", "Football", "Association",
+    "Australian<br>Rules", "American<br>Football", "Rugby", "Rugby<br>League",
+    "Rugby<br>Union"
+  ),
+  parents = c(
+    "", "", "", "North America", "North America", "North America", "Europe",
+    "Europe", "Europe","Australia", "Australia - Football", "Australia - Football",
+    "Australia - Football", "Australia - Football", "Australia - Rugby",
+    "Australia - Rugby"
+  ),
+  stringsAsFactors = FALSE
+)
+
+fig <- plot_ly(d, ids = ~ids, labels = ~labels, parents = ~parents, type = 'sunburst')
+
+fig
+```
+
+```{r}
+library(plotly)
+
+d1 <- read.csv('https://raw.githubusercontent.com/plotly/datasets/master/coffee-flavors.csv')
+d2 <- read.csv('https://raw.githubusercontent.com/plotly/datasets/718417069ead87650b90472464c7565dc8c2cb1c/sunburst-coffee-flavors-complete.csv')
+fig <- plot_ly() 
+fig <- fig %>%
+  add_trace(
+    ids = d1$ids,
+    labels = d1$labels,
+    parents = d1$parents,
+    type = 'sunburst',
+    maxdepth = 2,
+    domain = list(column = 0)
+    ) 
+fig <- fig %>%
+  add_trace(
+    ids = d2$ids,
+    labels = d2$labels,
+    parents = d2$parents,
+    type = 'sunburst',
+    maxdepth = 3,
+    domain = list(column = 1)
+  ) 
+fig <- fig %>%
+    layout(
+      grid = list(columns =2, rows = 1),
+      margin = list(l = 0, r = 0, b = 0, t = 0),
+      sunburstcolorway = c(
+        "#636efa","#EF553B","#00cc96","#ab63fa","#19d3f3",
+        "#e763fa", "#FECB52","#FFA15A","#FF6692","#B6E880"
+      ),
+      extendsunburstcolors = TRUE)
+fig
+
+
+```
+
+```{r}
+df = read.csv('https://raw.githubusercontent.com/plotly/datasets/718417069ead87650b90472464c7565dc8c2cb1c/coffee-flavors.csv')
+
+fig <- plot_ly()
+
+fig <- fig %>% add_trace(
+  type='sunburst',
+  ids=df$ids,
+  labels=df$labels,
+  parents=df$parents,
+  domain=list(column=1),
+  maxdepth=2,
+  insidetextorientation='radial'
+)
+fig
+```
