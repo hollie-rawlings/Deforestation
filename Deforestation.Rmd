@@ -31,6 +31,11 @@ soybean_farming <-tuesdata$soybean_use
 2. Tree map (because we like those) of soybean use filterable by year and faceted by continent (means i will need to join in a continent list)
 3. Forecast of future rainforest loss in Brazil for the next 10 years. 
 
+### New ideas (soy themed)
+1. Heatmap of soy production worldwide toggled by deforestation worldwide
+2. Line chart over the years 
+3. 
+
 ###Source###
 paper is here: https://ourworldindata.org/forests-and-deforestation
 
@@ -42,7 +47,7 @@ paper is here: https://ourworldindata.org/forests-and-deforestation
 ### Tree map showing the changes in soybean use by continet over time
 ***Background and aims***
 1. How has soy production changed over time 
-2. However due to recent links with global deforestation, soy has been marked as a product to avoid. 
+2. However due to recent links with global deforestation, soy has been marked as a product to avoid. How does soy bean farming link to deforestation? 
 3. Should I stop eating tofu to save trees? or is the real picture more complicated. 
 
 
@@ -153,7 +158,6 @@ sunburstDF <- as.sunburstDF(soybean_farming, valueCol = "value")
 ```{r}
 sunburst <-plot_ly(data = sunburstDF, ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total')
 sunburst
-
 
 ##Find a way to stop labels running into each other
 ```
