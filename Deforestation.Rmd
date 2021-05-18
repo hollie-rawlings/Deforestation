@@ -35,7 +35,20 @@ soybean_farming <-tuesdata$soybean_use
 paper is here: https://ourworldindata.org/forests-and-deforestation
 
 
+
+
+
+
 ### Tree map showing the changes in soybean use by continet over time
+***Background and aims***
+1. How has soy production changed over time 
+2. However due to recent links with global deforestation, soy has been marked as a product to avoid. 
+3. Should I stop eating tofu to save trees? or is the real picture more complicated. 
+
+
+categories are direct human consumption, direct animal feed and processed (animal feed, bio fuel,industrial use and vegetable oil)
+
+
 1. I don't like how they have grouped continents in this code so I am joining my own list in
 source is here: https://pkgstore.datahub.io/JohnSnowLabs/country-and-continent-codes-list/country-and-continent-codes-list-csv_csv/data/b7876b7f496677669644f3d1069d3121/country-and-continent-codes-list-csv_csv.csv
 
@@ -141,89 +154,6 @@ sunburstDF <- as.sunburstDF(soybean_farming, valueCol = "value")
 sunburst <-plot_ly(data = sunburstDF, ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total')
 sunburst
 
-```
-##Vingete 
 
-```{r}
-d <- data.frame(
-    ids = c(
-    "North America", "Europe", "Australia", "North America - Football", "Soccer",
-    "North America - Rugby", "Europe - Football", "Rugby",
-    "Europe - American Football","Australia - Football", "Association",
-    "Australian Rules", "Autstralia - American Football", "Australia - Rugby",
-    "Rugby League", "Rugby Union"
-  ),
-  labels = c(
-    "North<br>America", "Europe", "Australia", "Football", "Soccer", "Rugby",
-    "Football", "Rugby", "American<br>Football", "Football", "Association",
-    "Australian<br>Rules", "American<br>Football", "Rugby", "Rugby<br>League",
-    "Rugby<br>Union"
-  ),
-  parents = c(
-    "", "", "", "North America", "North America", "North America", "Europe",
-    "Europe", "Europe","Australia", "Australia - Football", "Australia - Football",
-    "Australia - Football", "Australia - Football", "Australia - Rugby",
-    "Australia - Rugby"
-  ),
-  stringsAsFactors = FALSE
-)
-
-fig <- plot_ly(d, ids = ~ids, labels = ~labels, parents = ~parents, type = 'sunburst')
-
-fig
-```
-
-```{r}
-library(plotly)
-
-d1 <- read.csv('https://raw.githubusercontent.com/plotly/datasets/master/coffee-flavors.csv')
-d2 <- read.csv('https://raw.githubusercontent.com/plotly/datasets/718417069ead87650b90472464c7565dc8c2cb1c/sunburst-coffee-flavors-complete.csv')
-fig <- plot_ly() 
-fig <- fig %>%
-  add_trace(
-    ids = d1$ids,
-    labels = d1$labels,
-    parents = d1$parents,
-    type = 'sunburst',
-    maxdepth = 2,
-    domain = list(column = 0)
-    ) 
-fig <- fig %>%
-  add_trace(
-    ids = d2$ids,
-    labels = d2$labels,
-    parents = d2$parents,
-    type = 'sunburst',
-    maxdepth = 3,
-    domain = list(column = 1)
-  ) 
-fig <- fig %>%
-    layout(
-      grid = list(columns =2, rows = 1),
-      margin = list(l = 0, r = 0, b = 0, t = 0),
-      sunburstcolorway = c(
-        "#636efa","#EF553B","#00cc96","#ab63fa","#19d3f3",
-        "#e763fa", "#FECB52","#FFA15A","#FF6692","#B6E880"
-      ),
-      extendsunburstcolors = TRUE)
-fig
-
-
-```
-
-```{r}
-df = read.csv('https://raw.githubusercontent.com/plotly/datasets/718417069ead87650b90472464c7565dc8c2cb1c/coffee-flavors.csv')
-
-fig <- plot_ly()
-
-fig <- fig %>% add_trace(
-  type='sunburst',
-  ids=df$ids,
-  labels=df$labels,
-  parents=df$parents,
-  domain=list(column=1),
-  maxdepth=2,
-  insidetextorientation='radial'
-)
-fig
+##Find a way to stop labels running into each other
 ```
