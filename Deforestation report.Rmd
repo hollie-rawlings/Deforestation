@@ -1,8 +1,13 @@
 ---
-title: "The effect of Soy production on deforestaion"
+title: "The effect of Soy production on Deforestaion"
 author: "Hollie Rawlings"
 date: "18/05/2021"
-output: html_document
+output: 
+  html_notebook: 
+    theme: united
+    toc: true
+    toc_float: true
+    number_sections: true
 runtime: shiny
 ---
 
@@ -10,35 +15,29 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Introduction {-}
 
+Across the world, demand for soy and soy products is surging. 
+Soy production has increased 15 fold since 1950 and is driven by four main countries, Brazil, Argentina, China and the US. 
+In recent years, soy has earned a poor reputation for both health and sustainability, but is this reputation justified? 
 
-```{r eruptions, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20),
-  
-  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
-)
-
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
-```
+This report will look at the history of soy production, investigate its links to deforestation and to think about what the future of soy production looks like in a  sustainable world. 
 
 
 
-```{r tabsets, echo=FALSE}
-shinyAppDir(
-  system.file("examples/06_tabsets", package = "shiny"),
-  options = list(
-    width = "100%", height = 550
-  )
-)
-```
+# The ever changing demand for soy products {-}
+
+- Shiny widget showing demand for soy production over time split out by country (maybe an area chart?)
+- Shiny widget showing the radial treemap so a user can interact better with the data
 
 
+# Is soy production linked to deforestaion? {-}
+
+- Shiny widget map showing soy production hot-spots over time (maybe animated?)
+- Shiny widget Next to graph of deforestation 
+
+# What does the future of soy production look like? {-}
+- Shiny widget forecast of future soy need 
+- What can we do to protect our forests worldwide? 
+
+# Conclusion remarks {-}

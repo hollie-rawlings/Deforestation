@@ -105,7 +105,7 @@ soybean_farming <- soybean_farming %>%
                                       
 ```
 
-## Function 
+## Function for building enginering data into the sunburst plot (its a real pain to get data in this format, ill keep note of this for the future) 
 ```{r}
 as.sunburstDF <- function(DF, valueCol = NULL){
   require(data.table)
