@@ -17,7 +17,7 @@ library(janitor)
 
 ### Data call###
 ```{r}
-#tuesdata <- tidytuesdayR::tt_load('2021-04-06')
+tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
 #forest_data <- tuesdata$forest
 #forest_area_data <-tuesdata$forest_area
