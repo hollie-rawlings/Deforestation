@@ -18,6 +18,8 @@ library(tidyverse)
 library(plotly)
 library(janitor)
 library(data.table)
+library(shinythemes)
+library(hrbrthemes)
 
 #tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
@@ -81,32 +83,47 @@ source(file = 'as_sunburst.R')
 ```{r,echo=FALSE}
 
 ui <- fluidPage(
-sliderInput("years",
-                label = "Years",
-                min = 1961,
-                max = 2013,
-                value = 2000),
-    plotlyOutput("radialtree"),
-    dataTableOutput('table')
-  )
+  theme = shinytheme("united"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("years", label = h3("Select box"), 
+            choices = list("1950" = 1950, "1960" = 1960, "1970" = 1970,"1980"=1980,"1990"=1990, "2000"=2000,"2010"=2010), 
+            selected = 1950)),
+    mainPanel(
+    plotlyOutput("radialtree"))
+      )
+        )
 
 server <- function(input, output, session){
-reactive_soybean_farming <- reactive({ soybean_farming %>%
+reactive_soybean_farming_sun <- reactive({ soybean_farming %>%
                                         filter(year == input$years)%>%
                                         select(-code)%>%
                                         pivot_longer(cols =c(human_food,animal_feed,processed))%>%
                                         select(Continent,entity,name,year,value)%>%
                                         as.sunburstDF(.,valueCol = "value")
-                                        
-                                        
 })
 
-output$table <- renderDataTable(reactive_soybean_farming())
+
+reactive_soybean_farming_area <- reactive({ 
+                                        soybean_farming %>%
+                                        mutate(across(human_food:processed, ~replace_na(.x,0)))%>%
+                                        filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
+                                        select(-code)%>%
+                                        group_by(Continent,year)%>%
+                                        mutate(Total = sum(human_food ,animal_feed,processed))%>%
+                                        ungroup()%>%
+                                        select(-entity,-human_food,-animal_feed,-processed)%>%
+                                        unique()
+})                                      
+                                        
 
 
 output$radialtree <-renderPlotly({
-  plot_ly(data = reactive_soybean_farming(), ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total')
+  plot_ly(data = reactive_soybean_farming_sun(), ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total')
 })
+
+
+
 }
 
 shinyApp(ui, server)
@@ -115,7 +132,50 @@ shinyApp(ui, server)
 ```
 - Shiny widget showing demand for soy production over time split out by country (maybe an area chart?)
 ```{r}
+soybean_farming 
 
+ui =    fluidPage(
+            theme = shinytheme("united"),
+            sidebarLayout(
+                sidebarPanel(
+
+                                sliderInput("years_slide",
+                                label = "Years",
+                                min = 1961,
+                                max = 2013,
+                                value = c(2000,2010))
+                ),
+            mainPanel(
+              plotlyOutput('areachart')
+            ) 
+
+))
+  
+server = function(input, output, session){
+  reactive_soybean_farming_area <- reactive({ 
+                                        soybean_farming %>%
+                                        mutate(across(human_food:processed, ~replace_na(.x,0)))%>%
+                                        filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
+                                        select(-code)%>%
+                                        group_by(Continent,year)%>%
+                                        mutate(Total = sum(human_food ,animal_feed,processed))%>%
+                                        ungroup()%>%
+                                        select(-entity,-human_food,-animal_feed,-processed)%>%
+                                        unique()
+})         
+  output$areachart <- renderPlotly({
+  ggplotly(
+    ggplot(reactive_soybean_farming_area(), aes(x=year,y=Total,fill=Continent)) +
+    geom_area() +
+      theme(legend.position="none") +
+    ggtitle("Total soy production by continent") +
+    theme_ipsum() +
+    theme(legend.position="none")
+  )
+})
+}
+
+shinyApp(ui, server)
 ```
 # Is soy production linked to deforestaion? {-}
 
