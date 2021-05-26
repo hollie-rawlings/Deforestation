@@ -20,6 +20,11 @@ library(janitor)
 library(data.table)
 library(shinythemes)
 library(hrbrthemes)
+library(magrittr)
+library(rvest)
+library(maps)
+library(ggiraph)
+library(RColorBrewer)
 
 #tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
@@ -131,6 +136,7 @@ shinyApp(ui, server)
 
 ```
 - Shiny widget showing demand for soy production over time split out by country (maybe an area chart?)
+
 ```{r}
 soybean_farming 
 
@@ -180,6 +186,39 @@ shinyApp(ui, server)
 # Is soy production linked to deforestaion? {-}
 
 - Shiny widget map showing soy production hot-spots over time (maybe animated?)
+```{r}
+soybean_farming_data<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+
+ui =  fluidPage(
+          theme = shinytheme("united"),
+          sidebarLayout(
+              sidebarPanel(
+
+                            sliderInput("years_slide",
+                            label = "Years",
+                            min = 1961,
+                            max = 2013,
+                            value = c(2000))
+                ),
+            mainPanel(
+              plotlyOutput('world_map')
+            ) 
+))
+server <- function(input, output) {
+soybean_farming_map_data <- reactive({soybean_farming_data %>%
+                                                        filter(!is.na(code))%>%
+                                                        filter(year==input$years_slide)
+})
+  
+output$world_map <-renderPlotly({
+data <- soybean_farming_map_data()
+  
+plot_ly(data, type='choropleth', locations=data$code, z=data$human_food, text=data$entity, colorscale="Blues")
+})
+
+}
+shinyApp(ui, server)
+```
 - Shiny widget Next to graph of deforestation 
 
 # What does the future of soy production look like? {-}
