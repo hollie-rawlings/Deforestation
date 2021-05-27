@@ -109,20 +109,6 @@ reactive_soybean_farming_sun <- reactive({ soybean_farming %>%
 })
 
 
-reactive_soybean_farming_area <- reactive({ 
-                                        soybean_farming %>%
-                                        mutate(across(human_food:processed, ~replace_na(.x,0)))%>%
-                                        filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
-                                        select(-code)%>%
-                                        group_by(Continent,year)%>%
-                                        mutate(Total = sum(human_food ,animal_feed,processed))%>%
-                                        ungroup()%>%
-                                        select(-entity,-human_food,-animal_feed,-processed)%>%
-                                        unique()
-})                                      
-                                        
-
-
 output$radialtree <-renderPlotly({
   plot_ly(data = reactive_soybean_farming_sun(), ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total')
 })
@@ -186,7 +172,7 @@ shinyApp(ui, server)
 # Is soy production linked to deforestaion? {-}
 
 - Shiny widget map showing soy production hot-spots over time (maybe animated?)
-```{r}
+```{r,echo=FALSE}
 soybean_farming_data<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
 
 ui =  fluidPage(
@@ -198,31 +184,180 @@ ui =  fluidPage(
                             label = "Years",
                             min = 1961,
                             max = 2013,
-                            value = c(2000))
+                            value = c(2000)),
+                            
+                            selectInput("consumption", label = h3("Select box"), 
+                            choices = list("Human Food" = "human_food", "Direct animal feed" = "animal_feed",
+                            "Processed products" = "processed"), selected = 1)
                 ),
             mainPanel(
               plotlyOutput('world_map')
             ) 
 ))
 server <- function(input, output) {
-soybean_farming_map_data <- reactive({soybean_farming_data %>%
+
+
+  
+soybean_farming_map_data <- reactive({
+                                      soybean_farming_data %>%
                                                         filter(!is.na(code))%>%
-                                                        filter(year==input$years_slide)
+                                                        filter(year==input$years_slide)%>%
+                                                        pivot_longer(cols=human_food:processed,names_to="type",values_to="value")
 })
-  
+
+soybean_farming_map_data_2 <- reactive({   
+                                            soybean_farming_map_data() %>%
+                                                                        subset(type %in% input$consumption)
+
+})
+
+
 output$world_map <-renderPlotly({
-data <- soybean_farming_map_data()
+data <- soybean_farming_map_data_2()
   
-plot_ly(data, type='choropleth', locations=data$code, z=data$human_food, text=data$entity, colorscale="Blues")
+plot_ly(data, type='choropleth', locations=data$code, z=data$value, text=data$entity, colorscale="Blues")
 })
 
 }
 shinyApp(ui, server)
 ```
 - Shiny widget Next to graph of deforestation 
+Investigate brazil data
+```{r}
+brazil_loss <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/brazil_loss.csv')
 
+ui =    fluidPage(
+            theme = shinytheme("united"),
+            sidebarLayout(
+                sidebarPanel(
+
+                                sliderInput("years_slide",
+                                label = "Years",
+                                min = 2001,
+                                max = 2013,
+                                value = c(2001,2005))
+                ),
+            mainPanel(
+              plotlyOutput('areachartbrazil')
+            ) 
+
+))
+  
+server = function(input, output, session){
+  reactive_brazil_forest_loss<- reactive({ 
+                                        brazil_loss %>%
+                                        filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
+                                        pivot_longer(cols=commercial_crops:small_scale_clearing,names_to="type",values_to="value")
+})         
+  output$areachartbrazil <- renderPlotly({
+  ggplotly(
+    ggplot(reactive_brazil_forest_loss(), aes(x=year,y=value,fill=type)) +
+    geom_area() +
+      theme(legend.position="none") +
+    ggtitle("Causes of Forest loss in Brazil") +
+    theme_ipsum() +
+    theme(legend.position="right")
+  )
+})
+}
+
+shinyApp(ui, server)
+```
 # What does the future of soy production look like? {-}
 - Shiny widget forecast of future soy need 
 - What can we do to protect our forests worldwide? 
+```{r echo=FALSE}
+## Bit of a data explore to find a suitable prediction model
 
+soybean_farming<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+library(caret)
+
+soybean_farming <- soybean_farming %>% 
+  inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
+  select(entity,code,year,human_food,animal_feed,processed,`ï..Continent_Name`)%>%
+  rename(Continent=`ï..Continent_Name`)
+
+continent_allocation <- soybean_farming %>% select(entity,Continent)%>%
+  unique()
+## These countries are 	Armenia,Azerbaijan,Cyprus,Georgia,Kazakhstan,Russia,Turkey 
+## There are not many, so I can use a case when to recode them. 
+## I'm no geography expert so I may not be right, If this were go go in a paper I would have to include a footnote about these allocations
+
+soybean_farming <- soybean_farming %>% 
+  mutate(Continent = case_when(
+    entity == "Armenia" ~ "Europe",
+    entity == "Azerbaijan" ~ "Asia", 
+    entity == "Cyprus" ~ "Europe", 
+    entity == "Georgia" ~ "Asia", 
+    entity == "Kazakhstan" ~ "Asia", 
+    entity == "Russia" ~ "Europe", 
+    entity == "Turkey" ~ "Europe", 
+    TRUE ~ Continent
+  ))%>%
+  unique()
+
+human <-ggplot(soybean_farming,aes(x=year,y=human_food,color=entity))+
+  geom_line()+
+  theme(legend.position = "none")
+
+animal <-ggplot(soybean_farming,aes(x=year,y=animal_feed,color=entity))+
+  geom_line()+
+  theme(legend.position = "none")
+
+processed <-ggplot(soybean_farming,aes(x=year,y=processed,color=entity))+
+  geom_line()+
+  theme(legend.position = "none")
+
+grid.arrange(human, animal,processed,nrow = 3)
+```
+Predictions for the future 
+- make individual predictions for each country 
+- split each model up
+
+```{r}
+library(forecast)
+
+## Humans
+human_split <- soybean_farming %>% 
+                select(-processed,-animal_feed)
+human_split$entity <-as.factor(human_split$entity)
+human_split <- split(human_split,human_split$entity)
+
+
+#Animals
+animal_split <- soybean_farming %>% 
+                select(-processed,-human_food)
+animal_split$entity <-as.factor(animal_split$entity)
+animal_split <- split(animal_split,animal_split$entity)
+
+
+#Processed
+processed_split <- soybean_farming %>% 
+                select(-human_food,-animal_feed) 
+processed_split$entity <-as.factor(processed_split$entity)
+processed_split <- split(processed_split,processed_split$entity)
+
+
+##Prediction_model
+Prediction_Model <- function(data){
+
+for(i in 1:length(human_split)){
+
+  
+print(human_split[1])
+train <- human_split[[1]] %>%
+                              sample_frac(0.8)
+
+test <- human_split[[1]] - train
+
+
+
+}
+
+}
+
+Prediction_Model(human_split)
+
+
+```
 # Conclusion remarks {-}
