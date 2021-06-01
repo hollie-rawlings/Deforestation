@@ -1,3 +1,4 @@
+
 as.sunburstDF <- function(DF, valueCol = NULL){
   require(data.table)
   
@@ -34,10 +35,10 @@ as.sunburstDF <- function(DF, valueCol = NULL){
   }
   
   hierarchyDT <- rbindlist(hierarchyList, use.names = TRUE, fill = TRUE)
-  
   parentCols <- setdiff(names(hierarchyDT), c("labels", "values", valueCol))
   hierarchyDT[, parents := apply(.SD, 1, function(x){fifelse(all(is.na(x)), yes = NA_character_, no = paste(x[!is.na(x)], sep = ":", collapse = " - "))}), .SDcols = parentCols]
   hierarchyDT[, ids := apply(.SD, 1, function(x){paste(x[!is.na(x)], collapse = " - ")}), .SDcols = c("parents", "labels")]
   hierarchyDT[, c(parentCols) := NULL]
   return(hierarchyDT)
 }
+

@@ -87,7 +87,10 @@ source(file = 'as_sunburst.R')
 ```
 
 ```{r,echo=FALSE}
+#https://stackoverflow.com/questions/57064828/how-can-i-change-colors-of-segments-in-trace
+#https://plotly.com/r/sunburst-charts/
 
+# Might eb able to give a continent number and then 
 ui <- fluidPage(
   theme = shinytheme("united"),
   sidebarLayout(
@@ -101,20 +104,30 @@ ui <- fluidPage(
         )
 
 server <- function(input, output, session){
-reactive_soybean_farming_sun <- reactive({ soybean_farming %>%
-                                        filter(year == input$years)%>%
+reactive_soybean_farming_sun <- reactive({ 
+                                        soybean_farming %>%
+                                        filter(year ==input$years)%>%
                                         select(-code)%>%
                                         pivot_longer(cols =c(human_food,animal_feed,processed))%>%
-                                        select(Continent,entity,name,year,value)%>%
-                                        as.sunburstDF(.,valueCol = "value")
+                                        filter(value != 0)%>%
+                                        select(Continent,entity,name,value)%>%
+                                        as.sunburstDF(.,valueCol = "value")%>%
+                                        mutate(color = case_when(
+                                          str_detect(ids,"Europe") ~ "#ACDF87", 
+                                          str_detect(ids,"Asia") ~ "#1E5631",
+                                          str_detect(ids,"North America") ~ "#A4DE02",
+                                          str_detect(ids,"South America") ~ "#D2E95E",
+                                          str_detect(ids,"Africa") ~ "#4C9A2A",
+                                          str_detect(ids,"Oceania") ~ "#15AA66",
+                                          TRUE ~ "NA"
+                                        ))
+## somehow need to change colours
 })
-
 
 output$radialtree <-renderPlotly({
   
   
-  sunbeam <-plot_ly(data = reactive_soybean_farming_sun(), ids = ~ids, labels= ~labels, parents = ~parents, values= ~values, type='sunburst',maxdepth=2 ,branchvalues = 'total') %>% layout(sunburstcolorway = ~colors)
-  sunbeam
+plot_ly(data = reactive_soybean_farming_sun(), ids = ~ids, labels= ~labels, parents = ~parents, values= ~values ,type='sunburst',maxdepth=2 ,branchvalues = 'total',insidetextorientation='radial',marker = list(colors= ~color))%>% layout(title = 'Soybean production by country')
 })
 
 
@@ -165,7 +178,8 @@ server = function(input, output, session){
     geom_area() +
       theme(legend.position="none") +
     ggtitle("Total soy production by continent") +
-    theme_ipsum() +
+    scale_fill_manual(values=c("#4C9A2A", "#1E5631", "#ACDF87","#A4DE02","#15AA66","#D2E95E")) +
+    theme_minimal() + 
     theme(legend.position="none")
   )
 })
