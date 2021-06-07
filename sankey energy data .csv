@@ -1,7 +1,8 @@
-﻿,soy,beef,lamb,chicken,egg,human
-soy,0,167,167,400,500,123.5
-beef,0,0,0,0,0,19
-lamb,0,0,0,0,0,44
-chicken,0,0,0,0,0,60
-egg,0,0,0,0,0,60
-human,0,0,0,0,0,0
+﻿,soy,human,beef,pork,lamb,chicken,egg
+soy,0,123.5,167,200,167,250,250
+beef,0,19,0,0,0,0,0
+pork,0,50,0,0,0,0,0
+lamb,0,44,0,0,0,0,0
+chicken,0,60,0,0,0,0,0
+egg,0,60,0,0,0,0,0
+human,0,0,0,0,0,0,0

@@ -9,8 +9,8 @@ output:
     code_folding: show
     thumbnails: true
     gallery: true
-    fig_width: 6
-    fig_height: 6
+    fig_width: 10
+    fig_height: 10
 runtime: shiny
 ---
 ```{r include=FALSE,message=FALSE}
@@ -205,6 +205,7 @@ server = function(input, output, session){
       theme(legend.position="none") +
     ggtitle("Total soy production by continent") +
     scale_fill_manual(values=c("#4C9A2A", "#1E5631", "#ACDF87","#A4DE02","#15AA66","#D2E95E")) +
+    scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE)) +
     theme_minimal() + 
     theme(legend.position="none")
   )
@@ -269,6 +270,7 @@ output$world_map <-renderPlotly({
 }
 shinyApp(ui, server)
 ```
+
 ### Brazil forest loss 
 
 This area chart details specific causes of forest loss in Brazil between 2001 and 2013. Every year over a million hectares of amazon is lost to pasture land, small scale farming, fire and importantly commercial crops like soy. Overall the deforestation rates of the amazon have decreased but areas are still continually cleared every year. In 2009 (marked on the graph) new legislation was announced curbing soy production on deforested land. Since then it has become evident that pasture land, not commercial crops which drive deforestation. 
@@ -307,7 +309,8 @@ server = function(input, output, session){
       theme(legend.position="none") +
     ggtitle("Causes of Forest loss in Brazil") +
     theme_ipsum() +
-    theme(legend.position="right")
+    theme(legend.position="right")+
+    scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE))
   )
 })
 }
@@ -466,7 +469,7 @@ output$plot <-renderPlot({
 
 
 }
-shinyApp(ui, server)
+shinyApp(ui, server,options = list(height = 500))
 ```
 
 # Conclusion remarks
@@ -481,13 +484,9 @@ Laws curbing soy production on deforested land have reduced the land clearance f
 
 Soy is an excellent source of protein, maybe we could just eat it ourselves? 
 
-```{r}
+```{r,R.options = list(height = 20)}
 # Library
 library(networkD3)
-library(dplyr)
-
-# Create an incidence matrix. Usually the flow goes from the row names to the column names.
-# Remember that our connection are directed since we are working with a flow.
 data <- read.csv("sankey energy data .csv",row.names=1,header=TRUE)
 
 # Transform it to connection data frame with tidyr from the tidyverse:
@@ -501,8 +500,9 @@ links <- data %>%
 nodes <- data.frame(
   name=c(as.character(links$source), as.character(links$target)) %>% 
     unique()
+    
   )
- 
+nodes$group <- gsub(" ", "-", nodes$name)
 # With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
 links$IDsource <- match(links$source, nodes$name)-1 
 links$IDtarget <- match(links$target, nodes$name)-1
@@ -510,6 +510,7 @@ links$IDtarget <- match(links$target, nodes$name)-1
 
 ui <- fluidPage(
     theme = theme,
+    titlePanel("Protein transfer from soy for different animal products vrs direct human food"),
     # Boxes need to be put in a row (or column)
     fluidRow(
       sankeyNetworkOutput("plot")
@@ -518,16 +519,16 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-
+my_color <- 'd3.scaleOrdinal() .domain(["soy", "beef","chicken", "pork", "egg", "lamb","human"]) .range(["#74B108", "#20B108" , "#08B145", "#08B199", "#0874B1", "#081FB1", "#B10874"])'
   output$plot <- renderSankeyNetwork({
 # Make the Network
 p <- sankeyNetwork(Links = links, Nodes = nodes,
                      Source = "IDsource", Target = "IDtarget",
                      Value = "value", NodeID = "name", 
-                     sinksRight=FALSE)
+                     sinksRight=FALSE,height =150,width=300,colourScale=my_color,fontFamily = "calibri",fontSize = 20,nodePadding = 5,NodeGroup = "group",iterations=0,nodeWidth=10,units ="g")
   })
-}
 
-shinyApp(ui, server)
+}
+shinyApp(ui, server,options = list(height = 1000))
 
 ```
