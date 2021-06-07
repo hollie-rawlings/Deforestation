@@ -479,9 +479,55 @@ Laws curbing soy production on deforested land have reduced the land clearance f
 
 ## What can we do? 
 
-Soy is an excellent source of protien, maybe we could just eat it ourselves? 
+Soy is an excellent source of protein, maybe we could just eat it ourselves? 
+
 ```{r}
-## sankey diagram energy flow or protein or something. 
+# Library
+library(networkD3)
+library(dplyr)
+
+# Create an incidence matrix. Usually the flow goes from the row names to the column names.
+# Remember that our connection are directed since we are working with a flow.
+data <- read.csv("sankey energy data .csv",row.names=1,header=TRUE)
+
+# Transform it to connection data frame with tidyr from the tidyverse:
+links <- data %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var="source") %>% 
+  gather(key="target", value="value", -1) %>%
+  filter(value != 0)
+ 
+# From these flows we need to create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(
+  name=c(as.character(links$source), as.character(links$target)) %>% 
+    unique()
+  )
+ 
+# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
+links$IDsource <- match(links$source, nodes$name)-1 
+links$IDtarget <- match(links$target, nodes$name)-1
+ 
+
+ui <- fluidPage(
+    theme = theme,
+    # Boxes need to be put in a row (or column)
+    fluidRow(
+      sankeyNetworkOutput("plot")
+    )
+  )
+
+
+server <- function(input, output) {
+
+  output$plot <- renderSankeyNetwork({
+# Make the Network
+p <- sankeyNetwork(Links = links, Nodes = nodes,
+                     Source = "IDsource", Target = "IDtarget",
+                     Value = "value", NodeID = "name", 
+                     sinksRight=FALSE)
+  })
+}
+
+shinyApp(ui, server)
+
 ```
-
-
