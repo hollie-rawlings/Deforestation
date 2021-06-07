@@ -222,9 +222,9 @@ It has been established that soy production has dramatically increased since 196
 ## What drives deforestation?  {.tabset}
 
 ### World map
-Here is a map of world deforestion over time. 
+Here is a map of world deforestation over time. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-soybean_farming_data<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+forest_area <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/forest_area.csv')
 
 ui =  fluidPage(
           theme = theme,
@@ -235,12 +235,7 @@ ui =  fluidPage(
                             label = "Years",
                             min = 1961,
                             max = 2013,
-                            value = c(2000),sep = ""),
-                            
-                            selectInput("consumption", label = h3("Select box"), 
-                            choices = list("Human Food" = "human_food", "Direct animal feed" = "animal_feed",
-                            "Processed products" = "processed"), selected = 1)
-                ),
+                            value = c(2000),sep = "")),
             mainPanel(
               plotlyOutput('world_map')
             ) 
@@ -249,19 +244,11 @@ server <- function(input, output) {
 
 
   
-soybean_farming_map_data <- reactive({
-                                      soybean_farming_data %>%
+forest_area <- reactive({
+                                      forest_area %>%
                                                         filter(!is.na(code))%>%
-                                                        filter(year==input$years_slide)%>%
-                                                        pivot_longer(cols=human_food:processed,names_to="type",values_to="value")
+                                                        filter(year==input$years_slide)
 })
-
-soybean_farming_map_data_2 <- reactive({   
-                                            soybean_farming_map_data() %>%
-                                                                        subset(type %in% input$consumption)
-
-})
-
 
 output$world_map <-renderPlotly({
 ### Replace with leaflet map about world forest cover
@@ -283,8 +270,7 @@ ui =    fluidPage(
             theme = theme,
             sidebarLayout(
                 sidebarPanel(
-
-                                sliderInput("years_slide",
+                  sliderInput("years_slide",
                                 label = "Years",
                                 min = 2001,
                                 max = 2013,
@@ -529,6 +515,6 @@ p <- sankeyNetwork(Links = links, Nodes = nodes,
   })
 
 }
-shinyApp(ui, server,options = list(height = 1000))
+shinyApp(ui, server,options = list(height = 700))
 
 ```
