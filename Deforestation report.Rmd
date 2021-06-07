@@ -66,15 +66,17 @@ In recent years, soy has earned a poor reputation for both health and sustainabi
 
 This report will look at the history of soy production, investigate its links to deforestation and to think about what the future of soy production looks like in a  sustainable world. 
 
-
-
 # The ever changing demand for soy products 
 
-## Classical tabs {.tabset}
+## How has soy demand develped in the last 50 years? {.tabset}
+The production of soy foods/products has exploded over the last 50 years. This change started to occur in the early 1960's and has continued on into the 21st century. In the year 1960 global soy production sat between 20 million and 30 million tonnes per year. In 2013 this reached 350 million tonnes. This increase has coincided with a 700 million hectare forest loss worldwide (since 1950). 
 
+The drastic increase in soy production has been caused by two factors. Firstly an increase in yield per hectare (soy crops are genetically modified for higher yield and greater weather robustness) and secondly increased space for farming. Unfortunately, some of this space has been created by **deforestation**. 
 
-### First tab
-Shiny widget showing the radial treemap so a user can interact better with the data
+### Sunburst plot
+This interactive plot shows soybean production across continents between 1965 and 2010. You can narrow down the treemap by clicking on a continent to see the soy breakdown by country and then by processing type (Soy for human foods e.g. tofu, beancurd,soymilk, soy for direct animal feed and soy for processed products e.g processed animal feed, industrial oils ect). 
+
+You will see that the four biggest soy producers in 2010 were the US, Brazil, Argentina and China. Whilst the Us and China have always been large soy producers, Brazil and Argentina are emerging soy producers. A vast majority of this soy is processed into animal feed (but not directly fed to animals) 
 
 ```{r echo=FALSE}
 continent_list <-read.csv("Continent_list.csv")
@@ -162,12 +164,11 @@ shinyApp(ui, server)
 
 
 ```
-Shiny widget showing demand for soy production over time split out by country (maybe an area chart?)
 
-### Second tab
+
+### Area plot
+This plot breaks down soy production by continent from the years 1961 to 2013. We can see that increases in soy production are driven by South America and Asia.  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-soybean_farming 
-
 ui =    fluidPage(
             theme=theme,
             sidebarLayout(
@@ -215,7 +216,12 @@ shinyApp(ui, server)
 
 # Is soy production linked to deforestaion?
 
-- Shiny widget map showing soy production hot-spots over time (maybe animated?)
+It has been established that soy production has dramatically increased since 1961 and this demand has been in processed soy products. The important question is how does this link to **deforestation**. 
+
+## What drives deforestation?  {.tabset}
+
+### World map
+Here is a map of world deforestion over time. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 soybean_farming_data<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
 
@@ -257,16 +263,17 @@ soybean_farming_map_data_2 <- reactive({
 
 
 output$world_map <-renderPlotly({
-data <- soybean_farming_map_data_2()
-  
-plot_ly(data, type='choropleth', locations=data$code, z=data$value, text=data$entity, colorscale="Blues")
+### Replace with leaflet map about world forest cover
 })
 
 }
 shinyApp(ui, server)
 ```
-- Shiny widget Next to graph of deforestation 
-Investigate brazil data
+### Brazil forest loss 
+
+This area chart details specific causes of forest loss in Brazil between 2001 and 2013. Every year over a million hectares of amazon is lost to pasture land, small scale farming, fire and importantly commercial crops like soy. Overall the deforestation rates of the amazon have decreased but areas are still continually cleared every year. In 2009 (marked on the graph) new legislation was announced curbing soy production on deforested land. Since then it has become evident that pasture land, not commercial crops which drive deforestation. 
+
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 brazil_loss <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/brazil_loss.csv')
 
@@ -309,8 +316,7 @@ shinyApp(ui, server)
 ```
 
 # What does the future of soy production look like? 
-- Shiny widget forecast of future soy need 
-- What can we do to protect our forests worldwide? 
+
 ```{r include=FALSE}
 ## Bit of a data explore to find a suitable prediction model
 
@@ -355,9 +361,6 @@ processed <-ggplot(soybean_farming,aes(x=year,y=processed,color=entity))+
 
 grid.arrange(human, animal,processed,nrow = 3)
 ```
-Predictions for the future 
-- make individual predictions for each country 
-- split each model up
 
 ```{r include=FALSE}
 library(forecast)
@@ -407,8 +410,10 @@ Prediction_Model(human_split)
 Prediction_Model(animal_split)
 Prediction_Model(processed_split)
 ```
-- Shiny app predictions 
+This application predicts the future of soy production in every country and every production method. 
+The default selection is world where we see all facets of soy production are set to exponentially increase. 
 
+Overall it is expected that soy production will increase by % by the year 2030 and % by 2040. This could have a devastating impact on deforestation in Brazil and Argentina and other contries around the world. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ui =  fluidPage(
           theme = theme,
@@ -465,3 +470,18 @@ shinyApp(ui, server)
 ```
 
 # Conclusion remarks
+Soy production has exponentially increased since 1961 and will continue to do so. The majority of these increases are  
+seen in Asia and South America. The majority of this crop is not eaten by humans but instead processed and fed to animals. 
+
+Looking at the deforestation causes for Brazil (the main soy producer) we see that clearing forest for pasture has a much greater impact than clearing for commercial crops, however as meat demand continues to grow, some of this pasture land is converted to soy farms. 
+
+Laws curbing soy production on deforested land have reduced the land clearance for crops, however this law only applies to Brazil and not another emerging soy producer, Argentina. 
+
+## What can we do? 
+
+Soy is an excellent source of protien, maybe we could just eat it ourselves? 
+```{r}
+## sankey diagram energy flow or protein or something. 
+```
+
+
