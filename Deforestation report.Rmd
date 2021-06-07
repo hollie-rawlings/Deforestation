@@ -224,7 +224,22 @@ It has been established that soy production has dramatically increased since 196
 ### World map
 Here is a map of world deforestation over time. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(sf)
+library(leaflet)
 forest_area <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/forest_area.csv')
+download.file(
+  url = "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip",
+  destfile = "world-shape-files.zip")
+
+unzip("world-shape-files.zip", 
+      exdir = "world-shape-files")
+
+world_shapefiles <- read_sf(dsn = "world-shape-files")
+
+forest_world <- world_shapefiles %>% 
+                                left_join(.,forest_area,by=c("ISO_A3"="code"))%>% 
+                                select(ISO_A3,entity,year,forest_area)
+
 
 ui =  fluidPage(
           theme = theme,
@@ -233,29 +248,39 @@ ui =  fluidPage(
 
                             sliderInput("years_slide",
                             label = "Years",
-                            min = 1961,
-                            max = 2013,
+                            min = 1990,
+                            max = 2020,
                             value = c(2000),sep = "")),
             mainPanel(
-              plotlyOutput('world_map')
+              leafletOutput('world_map',height=600)
             ) 
 ))
 server <- function(input, output) {
 
 
   
-forest_area <- reactive({
-                                      forest_area %>%
-                                                        filter(!is.na(code))%>%
-                                                        filter(year==input$years_slide)
+forest_react <- reactive({
+                          forest_world %>%
+                                          filter(!is.na(code))%>%
+                                          filter(year==input$years_slide)
 })
 
-output$world_map <-renderPlotly({
-### Replace with leaflet map about world forest cover
+output$world_map <-renderLeaflet({
+data <- forest_react()
+quant <-colorBin("YlGn",data$forest_area,bins=25)
+                                data %>%
+                                leaflet()%>% 
+                                addPolygons(weight=1, label=~entity,
+                                            color = ~quant(forest_area),
+                                            popup=~paste("Country" , entity,"<br/>","Forest Cover:",forest_area))%>%
+                                  leaflet::addLegend("bottomright", pal = quant, values = ~forest_area,
+                                  title = "Forest percentage coverage",
+                                  labFormat = labelFormat(prefix = "%"),
+                                  opacity = 1 )
 })
 
 }
-shinyApp(ui, server)
+shinyApp(ui, server,options = list(height = 600))
 ```
 
 ### Brazil forest loss 
@@ -470,7 +495,7 @@ Laws curbing soy production on deforested land have reduced the land clearance f
 
 Soy is an excellent source of protein, maybe we could just eat it ourselves? 
 
-```{r,R.options = list(height = 20)}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Library
 library(networkD3)
 data <- read.csv("sankey energy data .csv",row.names=1,header=TRUE)
