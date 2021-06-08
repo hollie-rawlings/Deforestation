@@ -323,7 +323,7 @@ server = function(input, output, session){
     ylab("Forest loss in hectares (ha)") +
     ggtitle("Causes of Forest loss in Brazil") +
     theme_minimal() +
-    geom_line(aes(x=2009),linetype=2) +
+    #geom_line(aes(x=2009),linetype=2) +
     theme(legend.position="right")+
     scale_x_continuous(breaks=2001:2013) +
     scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE))+ 
@@ -425,12 +425,14 @@ x <-autoplot(fc) +
 }
 x
 }
-
+Human_Pred <-Prediction_Model(human_split)
+Animal_pred <-Prediction_Model(animal_split)
+Processed_pred<-Prediction_Model(processed_split)
 ```
 This application predicts the future of soy production in every country and every production method. 
 The default selection is world where we see all facets of soy production are set to exponentially increase. 
 
-Overall it is expected that soy production will increase by % by the year 2030 and % by 2040. This could have a devastating impact on deforestation in Brazil and Argentina and other countries around the world. 
+Overall it is expected that soy production will increase worldwide by 2028. This could have a devastating impact on deforestation in Brazil and Argentina and other countries around the world. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ui =  fluidPage(
           theme = theme,
@@ -480,6 +482,7 @@ output$plot <-renderPlot({
   ylab("Soy production (millions of tonnes)") + xlab("Year")
   x <- x + theme_minimal() +
   labs(colour = "Model") + 
+  scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE)) +
   ggtitle("Predictions of soy production ending 2028")
   
   x
