@@ -299,7 +299,7 @@ ui =    fluidPage(
                                 label = "Years",
                                 min = 2001,
                                 max = 2013,
-                                value = c(2001,2005))
+                                value = c(2001,2005),sep="")
                 ),
             mainPanel(
               plotlyOutput('areachartbrazil')
@@ -311,22 +311,28 @@ server = function(input, output, session){
   reactive_brazil_forest_loss<- reactive({ 
                                         brazil_loss %>%
                                         filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
-                                        pivot_longer(cols=commercial_crops:small_scale_clearing,names_to="type",values_to="value")
+                                        pivot_longer(cols=commercial_crops:small_scale_clearing,names_to="type",values_to="value")%>%
+                                        mutate(type=str_to_sentence(type,locale ="en"))%>%
+                                        mutate(type = str_replace_all(type,"_"," "))
 })         
   output$areachartbrazil <- renderPlotly({
   ggplotly(
     ggplot(reactive_brazil_forest_loss(), aes(x=year,y=value,fill=type)) +
-    geom_area() +
-      theme(legend.position="none") +
+    geom_area() + 
+    xlab("Year") +
+    ylab("Forest loss in hectares (ha)") +
     ggtitle("Causes of Forest loss in Brazil") +
-    theme_ipsum() +
+    theme_minimal() +
+    geom_line(aes(x=2009),linetype=2) +
     theme(legend.position="right")+
-    scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE))
+    scale_x_continuous(breaks=2001:2013) +
+    scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE))+ 
+    scale_fill_brewer(type = "qual", palette ="Paired")
   )
 })
 }
 
-shinyApp(ui, server,options = list(width = 700))
+shinyApp(ui, server,options = list(width = 1100))
 ```
 
 # What does the future of soy production look like? 
@@ -420,9 +426,6 @@ x <-autoplot(fc) +
 x
 }
 
-Prediction_Model(human_split)
-Prediction_Model(animal_split)
-Prediction_Model(processed_split)
 ```
 This application predicts the future of soy production in every country and every production method. 
 The default selection is world where we see all facets of soy production are set to exponentially increase. 
@@ -439,7 +442,7 @@ ui =  fluidPage(
                             "Processed products" = "processed_split"), selected = 1),
                             
                             selectInput("contry", label = h3("Select box"), 
-                            choices = unique(soybean_farming$entity), selected = "Albania")
+                            choices = unique(soybean_farming$entity), selected = "Brazil")
                 ),
             mainPanel(
               plotOutput('plot')
@@ -471,10 +474,14 @@ output$plot <-renderPlot({
   data$Continent <-NULL
   data$year <- NULL
   past <- ts(data,end=2013)
-  fc <-holt(past)
+  fc <-holt(past, h=15)
   x <-autoplot(fc) +
   autolayer(fitted(fc), series="Fitted") +
   ylab("Soy production (millions of tonnes)") + xlab("Year")
+  x <- x + theme_minimal() +
+  labs(colour = "Model") + 
+  ggtitle("Predictions of soy production ending 2028")
+  
   x
 })
 
