@@ -332,7 +332,7 @@ server = function(input, output, session){
 })
 }
 
-shinyApp(ui, server,options = list(width = 1100))
+shinyApp(ui, server,options = list(width = 1000))
 ```
 
 # What does the future of soy production look like? 
