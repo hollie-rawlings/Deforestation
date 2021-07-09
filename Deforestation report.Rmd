@@ -23,7 +23,7 @@ theme <- bs_theme(
 )
 #bs_theme_preview(theme)
 
-theme <-bs_theme_update(theme, bg = "#D9FFE5", fg = "#000000", 
+theme <-bs_theme_update(theme, bg = "#FFFF", fg = "#000000", 
     primary = "#139805", base_font = font_google("Sen"), 
     `enable-gradients` = TRUE, `enable-rounded` = FALSE, 
     spacer = "2rem")
@@ -47,6 +47,7 @@ library(RColorBrewer)
 library(gridExtra)
 library(prettydoc)
 library(rmdformats)
+library(shinyWidgets)
 
 #tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
@@ -116,12 +117,24 @@ source(file = 'as_sunburst.R')
 #https://stackoverflow.com/questions/57064828/how-can-i-change-colors-of-segments-in-trace
 #https://plotly.com/r/sunburst-charts/
 
-# Might eb able to give a continent number and then 
+
 ui <- fluidPage(
   theme = theme,
+    setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+      
   sidebarLayout(
+
     sidebarPanel(
-      selectInput("years", label = h3("Select box"), 
+          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
+      selectInput("years", label = h3("Choose Year"), 
             choices = list("1965" = 1965, "1970" = 1970,"1975"=1975,"1980"=1980, "1985"=1985,"1990"=1990,"1995"=1995,"2000"=2000,"2005"=2005,"2010"=2010), 
             selected = 1990)),
     mainPanel(
@@ -153,7 +166,26 @@ reactive_soybean_farming_sun <- reactive({
 output$radialtree <-renderPlotly({
   
   
-plot_ly(data = reactive_soybean_farming_sun(), ids = ~ids, labels= ~labels, parents = ~parents, values= ~values ,type='sunburst',maxdepth=2 ,branchvalues = 'total',insidetextorientation='radial',marker = list(colors= ~color))%>% layout(title = 'Soybean production by country')
+plot_ly(data = reactive_soybean_farming_sun(), 
+        ids = ~ids, 
+        labels= ~labels, 
+        parents = ~parents, 
+        values= ~values ,
+        type='sunburst',
+        maxdepth=2 ,
+        branchvalues = 'total',
+        insidetextorientation='radial',marker = list(colors= ~color))%>% 
+        layout(
+              title = 'Soybean production by country (metric tonnes per year)', 
+              autosize = F, 
+              height = 500, 
+              margin = list(l=50, r=50, b=100, t=100, pad=4),
+              titlefont=list(size=24,family ="Arial",colour = "1c3e0b"),
+              plot_bgcolor="#FFFF", 
+              font = list(family="Arial",size=14)
+              
+              
+              )
 })
 
 
@@ -171,11 +203,22 @@ This plot breaks down soy production by continent from the years 1961 to 2013. W
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ui =    fluidPage(
             theme=theme,
-            sidebarLayout(
-                sidebarPanel(
+             setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
 
+            sidebarLayout(
+                sidebarPanel(          
+                tags$head(tags$style("#sidebar{
+                              color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
                                 sliderInput("years_slide",
-                                label = "Years",
+                                label =  h3("Choose year range"),
                                 min = 1961,
                                 max = 2013,
                                 value = c(2000,2010),sep = "")
@@ -243,11 +286,21 @@ forest_world <- world_shapefiles %>%
 
 ui =  fluidPage(
           theme = theme,
+           setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+
           sidebarLayout(
-              sidebarPanel(
+              sidebarPanel(          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
 
                             sliderInput("years_slide",
-                            label = "Years",
+                            label =  h3("Choose year"),
                             min = 1990,
                             max = 2020,
                             value = c(2000),sep = "")),
@@ -293,10 +346,20 @@ brazil_loss <- readr::read_csv('https://raw.githubusercontent.com/rfordatascienc
 
 ui =    fluidPage(
             theme = theme,
+             setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+
             sidebarLayout(
-                sidebarPanel(
+                sidebarPanel(          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
                   sliderInput("years_slide",
-                                label = "Years",
+                                label =  h3("Choose year range"),
                                 min = 2001,
                                 max = 2013,
                                 value = c(2001,2005),sep="")
@@ -436,14 +499,24 @@ Overall it is expected that soy production will increase worldwide by 2028. This
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ui =  fluidPage(
           theme = theme,
+           setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),       
+
           sidebarLayout(
-              sidebarPanel(
+              sidebarPanel(          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
                             
-                            selectInput("consumption", label = h3("Select box"), 
+                            selectInput("consumption", label = h3("Select production type"), 
                             choices = list("Human Food" = "human_split", "Direct animal feed" = "animal_split",
                             "Processed products" = "processed_split"), selected = 1),
                             
-                            selectInput("contry", label = h3("Select box"), 
+                            selectInput("contry", label = h3("Select country"), 
                             choices = unique(soybean_farming$entity), selected = "Brazil")
                 ),
             mainPanel(
@@ -533,9 +606,20 @@ links$IDtarget <- match(links$target, nodes$name)-1
 
 ui <- fluidPage(
     theme = theme,
+     setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    
     titlePanel("Protein transfer from soy for different animal products vrs direct human food"),
     # Boxes need to be put in a row (or column)
     fluidRow(
+      id="sidebar",
       sankeyNetworkOutput("plot")
     )
   )
