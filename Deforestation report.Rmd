@@ -671,9 +671,6 @@ links$IDtarget <- match(links$target, nodes$name)-1
 
 ui <- fluidPage(
     theme = theme,
-     setBackgroundImage(
-    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
-  ),
           tags$head(tags$style("#sidebar{color: white;
                              font-size: 20px;
                              font-family: Arial;
@@ -697,8 +694,9 @@ my_color <- 'd3.scaleOrdinal() .domain(["soy", "beef","chicken", "pork", "egg", 
 p <- sankeyNetwork(Links = links, Nodes = nodes,
                      Source = "IDsource", Target = "IDtarget",
                      Value = "value", NodeID = "name", 
-                     sinksRight=FALSE,height =150,width=300,colourScale=my_color,fontFamily = "calibri",fontSize = 20,nodePadding = 5,NodeGroup = "group",iterations=0,nodeWidth=10,units ="g")
-  })
+                     sinksRight=FALSE,height =150,width=300,colourScale=my_color,fontFamily = "calibri",fontSize = 20,nodePadding = 5,NodeGroup = "group",iterations=0,nodeWidth=10,units ="g"
+
+  )})
 
 }
 shinyApp(ui, server,options = list(height = 700))
