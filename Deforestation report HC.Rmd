@@ -194,7 +194,7 @@ plot_ly(data = reactive_soybean_farming_sun(),
               title = 'Soybean production by country (metric tonnes per year)', 
               autosize = F, 
               height = 600, 
-              width = 600, 
+              width = 700, 
               margin = list(l=100, r=100, b=100, t=100, pad=4),
               titlefont=list(size=24,family ="Arial",colour = "1c3e0b"),
               plot_bgcolor="#FFFF", 
@@ -208,7 +208,7 @@ plot_ly(data = reactive_soybean_farming_sun(),
 
 }
 
-shinyApp(ui, server,options = list(height = 1000))
+shinyApp(ui, server,options = list(height = 650))
 
 
 ```
@@ -240,7 +240,7 @@ ui =    fluidPage(
                                 value = c(2000,2010),sep = "")
                 ),
             mainPanel(
-              highchartOutput('areachart',height=600)
+              highchartOutput('areachart',height=600, width=700)
             ) 
 
 ))
@@ -268,7 +268,7 @@ server = function(input, output, session){
 })
 }
 
-shinyApp(ui, server)
+shinyApp(ui, server,options = list(height = 650))
 ```
 
 # Is soy production linked to deforestaion?
@@ -401,7 +401,7 @@ server = function(input, output, session){
 })
 }
 
-shinyApp(ui, server,options = list(width = 1000))
+shinyApp(ui, server,options = list(height = 650))
 ```
 
 # What does the future of soy production look like? 
@@ -584,7 +584,7 @@ output$plot <-renderPlot({
 
 
 }
-shinyApp(ui, server,options = list(height = 500))
+shinyApp(ui, server,options = list(height = 650))
 ```
 
 # Conclusion remarks
@@ -647,6 +647,6 @@ data <- links %>%
   })
 
 }
-shinyApp(ui, server,options = list(height = 700))
+shinyApp(ui, server,options = list(height = 650))
 
 ```
