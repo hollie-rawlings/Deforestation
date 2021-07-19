@@ -149,8 +149,13 @@ ui <- fluidPage(
             choices = list("1965" = 1965, "1970" = 1970,"1975"=1975,"1980"=1980, "1985"=1985,"1990"=1990,"1995"=1995,"2000"=2000,"2005"=2005,"2010"=2010), 
             selected = 1990)),
     mainPanel(
-    plotlyOutput("radialtree"), width=600, height=600)
-      )
+    br(), 
+    br(), 
+    br(), 
+    plotlyOutput("radialtree"), 
+    br())
+    
+     )
         )
 
 server <- function(input, output, session){
@@ -241,7 +246,11 @@ ui =    fluidPage(
                                 value = c(2000,2010),sep = "")
                 ),
             mainPanel(
-              highchartOutput('areachart',height=600, width=700)
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('areachart',height=600, width=700), 
+              br()
             ) 
 
 ))
@@ -317,7 +326,11 @@ ui =  fluidPage(
                             max = 2020,
                             value = c(2000),sep = "")),
             mainPanel(
-              highchartOutput('world_map',height=600)
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('world_map',height=600), 
+              br()
             ) 
 ))
 server <- function(input, output) {
@@ -376,7 +389,11 @@ ui =    fluidPage(
                                 value = c(2001,2005),sep="")
                 ),
             mainPanel(
-              highchartOutput('areachartbrazil', height = 600)
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('areachartbrazil', height = 600), 
+              br()
             ) 
 
 ))
@@ -528,7 +545,11 @@ ui =  fluidPage(
                             choices = unique(soybean_farming$entity), selected = "Brazil")
                 ),
             mainPanel(
-              plotOutput('plot')
+              br(), 
+              br(), 
+              br(), 
+              plotOutput('plot'), 
+              br()
             ) 
 ))
 server = function(input, output, session){
