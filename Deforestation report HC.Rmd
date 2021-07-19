@@ -58,6 +58,7 @@ library(gridExtra)
 library(prettydoc)
 library(rmdformats)
 library(shinyWidgets)
+library(highcharter)
 
 #tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
@@ -634,7 +635,7 @@ ui <- fluidPage(
 server <- function(input, output) {
 
 data <- links %>% 
-                  arrange(source) %>%
+                  arrange(match(target, c("pork", "beef", "chicken","lamb","egg","human")),value) %>%
                   rename(from = source , to = target , weight = value)
   
   output$plot <- renderHighchart({
