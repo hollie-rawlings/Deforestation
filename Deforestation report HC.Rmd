@@ -166,7 +166,8 @@ reactive_soybean_farming_sun <- reactive({
                                         soybean_farming %>%
                                         filter(year ==input$years)%>%
                                         select(-code)%>%
-                                        pivot_longer(cols =c(human_food,animal_feed,processed))%>%
+                                        rename(`human food` = human_food, `animal feed` = animal_feed)%>%
+                                        pivot_longer(cols =c(`human food`,`animal feed`,processed))%>%
                                         filter(value != 0)%>%
                                         select(Continent,entity,name,value)%>%
                                         as.sunburstDF(.,valueCol = "value")%>%
@@ -178,7 +179,8 @@ reactive_soybean_farming_sun <- reactive({
                                           str_detect(ids,"Africa") ~ "#4C9A2A",
                                           str_detect(ids,"Oceania") ~ "#15AA66",
                                           TRUE ~ "NA"
-                                        ))
+                                        ))  
+                                        
 ## somehow need to change colours
 }
 )
