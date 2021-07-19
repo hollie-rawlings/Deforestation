@@ -13,32 +13,7 @@ output:
     fig_height: 16
 runtime: shiny
 ---
-```{r include=FALSE,message=FALSE}
 
-library(bslib)
-theme <- bs_theme(
-  bg = "#0b3d91", fg = "white", primary = "#FCC780",
-  base_font = font_google("Space Mono"),
-  code_font = font_google("Space Mono")
-)
-#bs_theme_preview(theme)
-
-theme <-bs_theme_update(theme, bg = "#FFFF", fg = "#000000", 
-    primary = "#139805", base_font = font_google("Sen"), 
-    `enable-gradients` = TRUE, `enable-rounded` = FALSE, 
-    spacer = "2rem")
-
-
-library(highcharter)
-my_own_theme <- hc_theme(
-  colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
-  chart = list(
-    backgroundColor = "white"
-
-  ))
-
-
-```
 
 ```{r include=FALSE,message=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -59,6 +34,7 @@ library(prettydoc)
 library(rmdformats)
 library(shinyWidgets)
 library(highcharter)
+library(viridisLite)
 
 #tuesdata <- tidytuesdayR::tt_load('2021-04-06')
 
@@ -70,6 +46,33 @@ library(highcharter)
 
 soybean_farming<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
 ```
+
+```{r include=FALSE,message=FALSE}
+
+library(bslib)
+theme <- bs_theme(
+  bg = "#0b3d91", fg = "white", primary = "#FCC780",
+  base_font = font_google("Space Mono"),
+  code_font = font_google("Space Mono")
+)
+#bs_theme_preview(theme)
+
+theme <-bs_theme_update(theme, bg = "#FFFF", fg = "#000000", 
+    primary = "#139805", base_font = font_google("Sen"), 
+    `enable-gradients` = TRUE, `enable-rounded` = FALSE, 
+    spacer = "2rem")
+
+
+my_own_theme <- hc_theme(
+  colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
+  chart = list(
+    backgroundColor = "white"
+
+  ))
+
+
+```
+
 # Introduction 
 
 Across the world, demand for soy and soy products is surging. 
@@ -223,6 +226,14 @@ shinyApp(ui, server,options = list(height = 650))
 ### Area plot
 This plot breaks down soy production by continent from the years 1961 to 2013. We can see that increases in soy production are driven by South America and Asia.  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+my_own_theme <- hc_theme(
+  colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
+  chart = list(
+    backgroundColor = "white"
+
+  ))
+
+
 ui =    fluidPage(
             theme=theme,
              setBackgroundImage(
@@ -273,8 +284,7 @@ server = function(input, output, session){
       hc_plotOptions(series = list(stacking = 'normal')) %>%
         hc_title(text = "Soybean production by continent") %>% 
         hc_subtitle(text = "Output in metric tonnes") %>%
-    hc_add_theme(my_own_theme)
-
+        hc_add_theme(my_own_theme)
 })
 }
 
@@ -295,15 +305,6 @@ library(highcharter)
 
 forest_area <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/forest_area.csv')
 data(worldgeojson, package = "highcharter")
-
-my_own_theme <- hc_theme(
-  colors = c("red", "green", "blue"),
-  chart = list(
-    backgroundColor = "white"
-
-  ))
-
-
 
 ui =  fluidPage(
           theme = theme,
@@ -344,15 +345,22 @@ forest_react <- reactive({
 })
 
 output$world_map <-renderHighchart({
-  highchart(theme = getOption("highcharter.theme")) %>%
-  hc_add_series_map(
-    worldgeojson, forest_react(), value = "forest_area", joinBy = c('name','entity'),
-    name = "Forest Cover"
-    )  %>% 
-  hc_colorAxis(min = 0 , max = 20, minColor = "#b3f2c4",
-    maxColor = "#0f4f20") %>% 
+  
+  hcmap( map = "custom/world",
+    download_map_data = getOption("highcharter.download_map_data"),
+    data = forest_react(),
+    name ="Forest cover as percentage of total land mass", 
+    value= "forest_area", 
+    joinBy = c("iso-a3", "code"), 
+    borderWidth = 0,
+    nullColor = "#d3d3d3") %>%
+  hc_colorAxis(
+    min = 0, 
+    max = 30, 
+    stops = color_stops(n=30,colors = viridisLite::viridis(256,begin=0.3,end=0.9))
+    ) %>% 
   hc_title(text = "World Map") %>% 
-  hc_subtitle(text = "Forest cover by year") %>%
+  hc_subtitle(text = "Forest cover by percentage (%)") %>%
     hc_add_theme(my_own_theme)
 
 
@@ -648,9 +656,12 @@ ui <- fluidPage(
     # Boxes need to be put in a row (or column)
     fluidRow(
       id="sidebar",
-      highchartOutput("plot")
-    )
-  )
+          br(), 
+          br(), 
+          br(), 
+      highchartOutput("plot"), 
+          br()
+  ))
 
 
 server <- function(input, output) {
