@@ -94,7 +94,7 @@ This interactive plot shows soybean production across continents between 1965 an
 You will see that the four biggest soy producers in 2010 were the US, Brazil, Argentina and China. Whilst the Us and China have always been large soy producers, Brazil and Argentina are emerging soy producers. A vast majority of this soy is processed into animal feed (but not directly fed to animals) 
 
 ```{r echo=FALSE}
-continent_list <-read.csv("Continent_list.csv")
+continent_list <-read.csv("data/Continent_list.csv")
 
 soybean_farming <- soybean_farming %>% 
   inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
@@ -636,7 +636,7 @@ In one 1kg of soy beans a human could digest 124.5g of protein. If that 1kg of s
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Library
 library(networkD3)
-data <- read.csv("sankey energy data .csv",row.names=1,header=TRUE)
+data <- read.csv("data/sankey energy data .csv",row.names=1,header=TRUE)
 
 # Transform it to connection data frame with tidyr from the tidyverse:
 links <- data %>% 
