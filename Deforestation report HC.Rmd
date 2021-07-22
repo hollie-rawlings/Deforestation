@@ -219,7 +219,7 @@ plot_ly(data = reactive_soybean_farming_sun(),
 
 }
 
-shinyApp(ui, server,options = list(height = 650))
+shinyApp(ui, server,options = list(height = 700))
 
 
 ```
@@ -290,7 +290,7 @@ server = function(input, output, session){
 })
 }
 
-shinyApp(ui, server,options = list(height = 650))
+shinyApp(ui, server,options = list(height = 700))
 ```
 
 # Is soy production linked to deforestaion?
@@ -367,7 +367,7 @@ output$world_map <-renderHighchart({
 
 
 })}
-shinyApp(ui, server,options = list(height = 600))
+shinyApp(ui, server,options = list(height = 700))
 ```
 
 ### Brazil forest loss 
@@ -429,7 +429,7 @@ server = function(input, output, session){
 })
 }
 
-shinyApp(ui, server,options = list(height = 650))
+shinyApp(ui, server,options = list(height =700))
 ```
 
 # What does the future of soy production look like? 
@@ -616,7 +616,7 @@ output$plot <-renderPlot({
 
 
 }
-shinyApp(ui, server,options = list(height = 650))
+shinyApp(ui, server,options = list(height = 700))
 ```
 
 # Conclusion remarks
