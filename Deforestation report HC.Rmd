@@ -633,7 +633,7 @@ Fitted, `Point Forecast`),names_to = "Model",values_to = "Values")
                                enabled = FALSE)) %>%
   hc_title(text = "Predictions of Soy consumption") %>% 
   hc_subtitle(text = "Using a HoltWinters model to predict soy consumption by type <br> untill 2023") %>%
-  hc_colors()
+  hc_colors(c("#00470e", "#7d1100", "#ff2b2b","#fab1b1")) %>%
   hc_add_theme(my_own_theme)%>%
   hc_xAxis(min = 1961) %>%
   hc_plotOptions(line = list(
@@ -641,7 +641,8 @@ Fitted, `Point Forecast`),names_to = "Model",values_to = "Values")
                                enabled = FALSE)), 
                  area =list(
                              marker=list(
-                               enabled = FALSE)) ) %>%
+                               enabled = FALSE)), 
+                                series = list(fillOpacity = 0.35)) %>%
   hc_exporting(enabled=TRUE) %>% 
   hc_legend(enabled = TRUE)
 
