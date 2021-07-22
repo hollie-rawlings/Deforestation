@@ -701,13 +701,11 @@ ui <- fluidPage(
     ),
     
     # Boxes need to be put in a row (or column)
+     
     fluidRow(
-      id="sidebar",
-          br(), 
-          br(), 
-          br(), 
-      highchartOutput("plot") %>% withSpinner(color="#09bd42"), 
-          br()
+      tags$head(tags$style('.col-sm-6 {padding-left: 0px; padding-right: 0px ;}')),
+      highchartOutput("plot", height=500, width=1000) %>% withSpinner(color="#09bd42")
+
   ))
 
 
@@ -722,13 +720,14 @@ data <- links %>%
   hc_chart(type = 'sankey') %>%
   hc_add_series(data = data) %>% 
             hc_title(text = "Protien transfer from different energy sources") %>% 
-            hc_subtitle(text = "Measured in gramms (g)") %>%
-      hc_add_theme(my_own_theme) %>% 
-      hc_exporting(enabled=TRUE)
+            hc_subtitle(text = "Measured in grams (g)") %>%
+      hc_add_theme(my_own_theme)%>%  
+      hc_exporting(enabled=TRUE) 
+      #hc_size(width=800, height=800)
 
   })
 
 }
-shinyApp(ui, server,options = list(height = 650))
+shinyApp(ui, server, options = list(height = 650))
 
 ```
