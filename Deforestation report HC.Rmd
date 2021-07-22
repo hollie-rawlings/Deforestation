@@ -558,35 +558,13 @@ processed_split <- soybean_farming %>%
 processed_split$entity <-as.factor(processed_split$entity)
 processed_split <- split(processed_split,processed_split$entity)
 
-##Prediction_model
-Prediction_Model <- function(data){
-
-for(i in 1:length(data)){
-data_z <- human_split[["China"]] 
-data_z[is.na(data_z)] = 0
-name <- unique(data_z$entity)
-data_z$entity <-NULL
-data_z$code <- NULL
-data_z$Continent <-NULL
-data_z$year <- NULL
-
-past <- ts(data_z,end=2013)
-fc <-holt(past, h=20)
-x <-autoplot(fc, colour="#228b22") +
-  autolayer(fitted(fc), series="Fitted") +
-  ylab("Soy production (millions of tonnes)") + xlab("Year")
-}
-x
-}
-Human_Pred <-Prediction_Model(human_split)
-Animal_pred <-Prediction_Model(animal_split)
-Processed_pred<-Prediction_Model(processed_split)
 ```
 This application predicts the future of soy production in every country and every production method. 
 The default selection is world where we see all facets of soy production are set to exponentially increase. 
 
 Overall it is expected that soy production will increase worldwide by 2028. This could have a devastating impact on deforestation in Brazil and Argentina and other countries around the world. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(xts)
 ui =  fluidPage(
           theme = theme,
            setBackgroundImage(
@@ -612,7 +590,7 @@ ui =  fluidPage(
               br(), 
               br(), 
               br(), 
-              plotlyOutput('plot'), 
+              highchartOutput('plot'), 
               br()
             ) 
 ))
@@ -634,39 +612,39 @@ filtered_data <- reactive({
     
 })
 
-output$plot <-renderPlotly({
-  data <-filtered_data()
+output$plot <-renderHighchart({
+  data <-human_split$Brazil
+  ## change years to date objects 
+  year_axis <- as.Date(paste(data$year, 1, 1, sep = "-"))
   name <- unique(data$entity)
   data$entity <-NULL
   data$code <- NULL
   data$Continent <-NULL
   data$year <- NULL
-  past <- ts(data,end=2013)
-  fc <-holt(past, h=20)
-  pallete = c('#228b22', '#90ee90', 'green', 'orange')
-  
-  x <-autoplot(fc) +
-  autolayer(fc[["x"]], series = "Data", ts.colour ="#228b22",predict.colour = 'green',predict.linetype = 'dashed',conf.int.fill='#BCED91') +
-  autolayer(fitted(fc), series="Model", ts.colour = 'green') +
-  scale_colour_manual(values=pallete) +
-  ylab("Soy production (millions of tonnes)") + 
-  xlab("Year")+ 
-  guides(colour=guide_legend(title="Data series"))
-  
-  x <- x + 
-  theme_bw() +
-  labs(colour = "Model") + 
-  scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE)) +
-  ggtitle("Predictions of soy production ending 2028") +
-  theme(text = element_text(size=16)) + 
-  theme(plot.title = element_text(hjust = 0.5, size =20, color = "#228b22" , family="Arial"))+
-  theme(axis.title.x = element_text(colour = "#228b22"),
-        axis.title.y = element_text(colour = "#228b22")) + 
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) 
-  
-  x <-ggplotly(x) 
-  x
+  time_series <- ts(data,frequency=1,start=1961,end=2013)
+  holt_winters <- HoltWinters(time_series,gamma=FALSE)
+  x <- forecast(holt_winters, level = c(95, 80))
+  df <- fortify(x)
+  df <-pivot_longer(df,cols=c(Data,	
+Fitted, `Point Forecast`),names_to = "Model",values_to = "Values")
+  hchart(df,'spline',hcaes(x = 'Index', y = 'Values', group = "Model")) %>% 
+  hc_add_series(df, "arearange", hcaes(Index, low = `Lo 80`, high = `Hi 80`), name = "Confidence Interval",
+                               marker=list(
+                               enabled = FALSE)) %>%
+  hc_title(text = "Predictions of Soy consumption") %>% 
+  hc_subtitle(text = "Using a HoltWinters model to predict soy consumption by type <br> untill 2023") %>%
+  hc_colors()
+  hc_add_theme(my_own_theme)%>%
+  hc_xAxis(min = 1961) %>%
+  hc_plotOptions(line = list(
+                             marker=list(
+                               enabled = FALSE)), 
+                 area =list(
+                             marker=list(
+                               enabled = FALSE)) ) %>%
+  hc_exporting(enabled=TRUE) %>% 
+  hc_legend(enabled = TRUE)
+
 })
 
 
