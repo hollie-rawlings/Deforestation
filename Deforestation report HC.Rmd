@@ -62,40 +62,6 @@ theme <-bs_theme_update(theme, bg = "#FFFF", fg = "#000000",
     `enable-gradients` = TRUE, `enable-rounded` = FALSE, 
     spacer = "2rem")
 
-
-my_own_theme <- hc_theme(
-  colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
-  
-  chart = list(
-    backgroundColor = "white"
-
-  ), 
-  title = list(
-    style = list(
-      color = "#002611",
-      fontFamily = "Arial"
-    )
-  ), 
-    subtitle = list(
-    style = list(
-      color = "#004a20",
-      fontFamily = "Arial"
-    )
-  ),
-   legend = list(
-    itemStyle = list(
-      fontFamily = "Arial",
-      color = "#014f23"
-    ),
-    itemHoverStyle = list(
-      color = "#8db39d"
-    )
-  )
-  
-  
-  )
-
-
 ```
 
 # Introduction 
@@ -166,7 +132,8 @@ ui <- fluidPage(
   sidebarLayout(
 
     sidebarPanel(
-          tags$head(tags$style("#sidebar{color: white;
+         tags$head(tags$style("#sidebar{
+                             color: white;
                              font-size: 20px;
                              font-family: Arial;
                          }"
@@ -227,17 +194,21 @@ plot_ly(data = reactive_soybean_farming_sun(),
         insidetextfont=list(family="Arial",size=16))%>% 
         layout(
               showlegend = TRUE,
-              title = 'Soybean production by country (metric tonnes per year)', 
+              title = list(text = 'Soybean production by country <br> (metric tonnes per year)') , 
               autosize = F, 
               height = 600, 
               width = 700, 
               margin = list(l=100, r=100, b=100, t=100, pad=4),
-              titlefont=list(size=24,family ="Arial",colour = "1c3e0b"),
-              plot_bgcolor="#FFFF", 
-              font = list(family="Arial",size=14)
+              titlefont=list(size=24,family ="Arial",colour = "#002611"),
+              plot_bgcolor="#cfe3d7",
+              paper_bgcolor="#cfe3d7",
+              font = list(family="Arial",size=14), 
+              legend = list(orientation = "h",   # show entries horizontally
+                     xanchor = "center",  # use center of legend as anchor
+                     x = 0.5))             # put legend in center of x-axis
               
               
-              )
+              
 })
 
 
@@ -301,7 +272,7 @@ ui =    fluidPage(
             sidebarLayout(
                 sidebarPanel(          
                 tags$head(tags$style("#sidebar{
-                              color: white;
+                             color: white;
                              font-size: 20px;
                              font-family: Arial;
                          }"
@@ -457,10 +428,8 @@ ui =    fluidPage(
   ),
 
             sidebarLayout(
-                sidebarPanel(          tags$head(tags$style("#sidebar{color: white;
-                             font-size: 20px;
-                             font-family: Arial;
-                         }"
+                sidebarPanel(          tags$head(tags$style("#sidebar{color: white;font-size: 20px;font-family: Arial;}", 
+                                                            ".irs-grid-text {font-family: 'arial'; color: white; bottom: 17px;z-index:1;}"
                      )
     ),
     id="sidebar",
@@ -625,10 +594,9 @@ ui =  fluidPage(
   ),       
 
           sidebarLayout(
-              sidebarPanel(          tags$head(tags$style("#sidebar{color: white;
-                             font-size: 20px;
-                             font-family: Arial;
-                         }"
+              sidebarPanel(          tags$head(
+                                            tags$style("#sidebar{color: white;font-size: 20px;font-family: Arial;}",
+                                                       ".irs-grid-text {font-family: 'arial'; color: white; bottom: 17px; z-index: 1;}"
                      )
     ),
     id="sidebar",
@@ -644,7 +612,7 @@ ui =  fluidPage(
               br(), 
               br(), 
               br(), 
-              plotOutput('plot'), 
+              plotlyOutput('plot'), 
               br()
             ) 
 ))
@@ -722,7 +690,6 @@ In one 1kg of soy beans a human could digest 124.5g of protein. If that 1kg of s
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Library
-library(networkD3)
 data <- read.csv("data/sankey energy data .csv",row.names=1,header=TRUE)
 
 # Transform it to connection data frame with tidyr from the tidyverse:
@@ -764,7 +731,8 @@ data <- links %>%
   hc_chart(type = 'sankey') %>%
   hc_add_series(data = data) %>% 
             hc_title(text = "Protien transfer from different energy sources") %>% 
-            hc_subtitle(text = "Measured in gramms (g)") 
+            hc_subtitle(text = "Measured in gramms (g)") %>%
+      hc_add_theme(my_own_theme)
 
   })
 
