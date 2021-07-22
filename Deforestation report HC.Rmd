@@ -65,10 +65,35 @@ theme <-bs_theme_update(theme, bg = "#FFFF", fg = "#000000",
 
 my_own_theme <- hc_theme(
   colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
+  
   chart = list(
     backgroundColor = "white"
 
-  ))
+  ), 
+  title = list(
+    style = list(
+      color = "#002611",
+      fontFamily = "Arial"
+    )
+  ), 
+    subtitle = list(
+    style = list(
+      color = "#004a20",
+      fontFamily = "Arial"
+    )
+  ),
+   legend = list(
+    itemStyle = list(
+      fontFamily = "Arial",
+      color = "#014f23"
+    ),
+    itemHoverStyle = list(
+      color = "#8db39d"
+    )
+  )
+  
+  
+  )
 
 
 ```
@@ -230,10 +255,41 @@ This plot breaks down soy production by continent from the years 1961 to 2013. W
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 my_own_theme <- hc_theme(
   colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
+  
   chart = list(
-    backgroundColor = "white"
+    backgroundColor = "#cfe3d7", 
+    borderWidth = 4, 
+    borderColor = "#015927"
 
-  ))
+  ), 
+  title = list(
+    style = list(
+      color = "#002611",
+      fontFamily = "Arial", 
+      fontSize = "24px"
+    )
+  ), 
+    subtitle = list(
+    style = list(
+      color = "#004a20",
+      fontFamily = "Arial", 
+      fontSize = "18px"
+    )
+  ),
+   legend = list(
+    itemStyle = list(
+      fontFamily = "Arial",
+      color = "#014f23", 
+      fontSize = "14px"
+    ),
+    itemHoverStyle = list(
+      color = "#8db39d"
+    )
+  )
+  
+  
+  )
+
 
 
 ui =    fluidPage(
@@ -286,7 +342,23 @@ server = function(input, output, session){
       hc_plotOptions(series = list(stacking = 'normal')) %>%
         hc_title(text = "Soybean production by continent") %>% 
         hc_subtitle(text = "Output in metric tonnes") %>%
-        hc_add_theme(my_own_theme)
+        hc_add_theme(my_own_theme) %>% 
+        hc_xAxis(
+        title = list(text = "Year",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px"))) %>% 
+        hc_yAxis(
+        title = list(text = "Total production (tonnes)",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px")))
+                          
+    
 })
 }
 
@@ -363,7 +435,7 @@ output$world_map <-renderHighchart({
     ) %>% 
   hc_title(text = "World Map") %>% 
   hc_subtitle(text = "Forest cover by percentage (%)") %>%
-    hc_add_theme(my_own_theme)
+  hc_add_theme(my_own_theme)
 
 
 })}
@@ -424,7 +496,21 @@ server = function(input, output, session){
         hc_title(text = "Forest loss in Brazil") %>% 
         hc_subtitle(text = "Measured in hectares (ha)") %>%
     hc_add_theme(my_own_theme) %>%
-    hc_colors(c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99"))
+    hc_colors(c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99")) %>% 
+    hc_xAxis(
+        title = list(text = "Year",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px"))) %>% 
+    hc_yAxis(
+        title = list(text = "Total Clearence in hectares (ha)",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px")))
 
 })
 }
@@ -580,7 +666,7 @@ filtered_data <- reactive({
     
 })
 
-output$plot <-renderPlot({
+output$plot <-renderPlotly({
   data <-filtered_data()
   name <- unique(data$entity)
   data$entity <-NULL
@@ -611,7 +697,8 @@ output$plot <-renderPlot({
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
   panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) 
   
-  x 
+  x <-ggplotly(x) 
+  x
 })
 
 
