@@ -1,0 +1,221 @@
+---
+title: "The effect of Soy production on Deforestaion"
+author: "Hollie Rawlings"
+date: "18/05/2021"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(janitor)
+library(data.table)
+library(shinythemes)
+library(hrbrthemes)
+library(magrittr)
+library(rvest)
+library(maps)
+library(ggiraph)
+library(RColorBrewer)
+library(gridExtra)
+library(prettydoc)
+library(rmdformats)
+library(shinyWidgets)
+library(highcharter)
+library(viridisLite)
+library(shinycssloaders)
+
+soybean_farming<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+```
+
+```{r include=FALSE,message=FALSE}
+
+library(bslib)
+theme <- bs_theme(
+  bg = "#0b3d91", fg = "white", primary = "#FCC780",
+  base_font = font_google("Space Mono"),
+  code_font = font_google("Space Mono")
+)
+#bs_theme_preview(theme)
+
+theme <-bs_theme_update(theme, bg = "#FFFF", fg = "#000000", 
+    primary = "#139805", base_font = font_google("Sen"), 
+    `enable-gradients` = TRUE, `enable-rounded` = FALSE, 
+    spacer = "2rem")
+
+```
+# Introduction 
+
+Across the world, demand for soy and soy products is surging. 
+Soy production has increased 15 fold since 1950 and is driven by four main countries, Brazil, Argentina, China and the US. 
+In recent years, soy has earned a poor reputation for both health and sustainability, but is this reputation justified? 
+
+This report will look at the history of soy production, investigate its links to deforestation and to think about what the future of soy production looks like in a  sustainable world. 
+
+## How has soy demand develped in the last 50 years?
+The production of soy foods/products has exploded over the last 50 years. This change started to occur in the early 1960's and has continued on into the 21st century. In the year 1960 global soy production sat between 20 million and 30 million tonnes per year. In 2013 this reached 350 million tonnes. This increase has coincided with a 700 million hectare forest loss worldwide (since 1950). 
+
+The drastic increase in soy production has been caused by two factors. Firstly an increase in yield per hectare (soy crops are genetically modified for higher yield and greater weather robustness) and secondly increased space for farming. Unfortunately, some of this space has been created by **deforestation**. 
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Sunburst plot
+This interactive plot shows soybean production across continents between 1965 and 2010. You can narrow down the treemap by clicking on a continent to see the soy breakdown by country and then by processing type (Soy for human foods e.g. tofu, beancurd,soymilk, soy for direct animal feed and soy for processed products e.g processed animal feed, industrial oils ect). 
+
+You will see that the four biggest soy producers in 2010 were the US, Brazil, Argentina and China. Whilst the Us and China have always been large soy producers, Brazil and Argentina are emerging soy producers. A vast majority of this soy is processed into animal feed (but not directly fed to animals) 
+
+```{r echo=FALSE}
+continent_list <-read.csv("data/Continent_list.csv")
+
+soybean_farming <- soybean_farming %>% 
+  inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
+  select(entity,code,year,human_food,animal_feed,processed,`ï..Continent_Name`)%>%
+  rename(Continent=`ï..Continent_Name`)
+
+continent_allocation <- soybean_farming %>% select(entity,Continent)%>%
+  unique()
+## These countries are 	Armenia,Azerbaijan,Cyprus,Georgia,Kazakhstan,Russia,Turkey 
+## There are not many, so I can use a case when to recode them. 
+## I'm no geography expert so I may not be right, If this were go go in a paper I would have to include a footnote about these allocations
+
+soybean_farming <- soybean_farming %>% 
+  mutate(Continent = case_when(
+    entity == "Armenia" ~ "Europe",
+    entity == "Azerbaijan" ~ "Asia", 
+    entity == "Cyprus" ~ "Europe", 
+    entity == "Georgia" ~ "Asia", 
+    entity == "Kazakhstan" ~ "Asia", 
+    entity == "Russia" ~ "Europe", 
+    entity == "Turkey" ~ "Europe", 
+    TRUE ~ Continent
+  ))%>%
+  unique()
+
+
+## Function for building enginering data into the sunburst plot (its a real pain to get data in this format, ill keep note of this for the future) 
+
+source(file = 'as_sunburst.R')
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#https://stackoverflow.com/questions/57064828/how-can-i-change-colors-of-segments-in-trace
+#https://plotly.com/r/sunburst-charts/
+
+
+ui <- fluidPage(
+  theme = theme,
+    setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+      
+  sidebarLayout(
+
+    sidebarPanel(
+         tags$head(tags$style("#sidebar{
+                             color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
+      selectInput("years", label = h3("Choose Year"), 
+            choices = list("1965" = 1965, "1970" = 1970,"1975"=1975,"1980"=1980, "1985"=1985,"1990"=1990,"1995"=1995,"2000"=2000,"2005"=2005,"2010"=2010), 
+            selected = 1990)),
+    mainPanel(
+    br(), 
+    br(), 
+    br(), 
+    plotlyOutput("radialtree") %>% withSpinner(color="#09bd42"), 
+    br())
+    
+     )
+        )
+
+server <- function(input, output, session){
+reactive_soybean_farming_sun <- reactive({ 
+                                        soybean_farming %>%
+                                        filter(year ==input$years)%>%
+                                        select(-code)%>%
+                                        rename(`human food` = human_food, `animal feed` = animal_feed)%>%
+                                        pivot_longer(cols =c(`human food`,`animal feed`,processed))%>%
+                                        filter(value != 0)%>%
+                                        select(Continent,entity,name,value)%>%
+                                        as.sunburstDF(.,valueCol = "value")%>%
+                                        mutate(color = case_when(
+                                          str_detect(ids,"Europe") ~ "#ACDF87", 
+                                          str_detect(ids,"Asia") ~ "#1E5631",
+                                          str_detect(ids,"North America") ~ "#A4DE02",
+                                          str_detect(ids,"South America") ~ "#D2E95E",
+                                          str_detect(ids,"Africa") ~ "#4C9A2A",
+                                          str_detect(ids,"Oceania") ~ "#15AA66",
+                                          TRUE ~ "NA"
+                                        ))  
+                                        
+## somehow need to change colours
+}
+)
+
+output$radialtree <-renderPlotly({
+  
+  
+plot_ly(data = reactive_soybean_farming_sun(), 
+        ids = ~ids, 
+        labels= ~labels, 
+        parents = ~parents, 
+        values= ~values ,
+        type='sunburst',
+        maxdepth=2 ,
+        branchvalues = 'total',
+        insidetextorientation='radial',
+        marker = list(colors= ~color), 
+        textfont = list(family="Arial",size=16), 
+        insidetextfont=list(family="Arial",size=16))%>% 
+        layout(
+              showlegend = TRUE,
+              title = list(text = 'Soybean production by country <br> (metric tonnes per year)') , 
+              autosize = F, 
+              height = 600, 
+              width = 700, 
+              margin = list(l=100, r=100, b=100, t=100, pad=4),
+              titlefont=list(size=24,family ="Arial",colour = "#002611"),
+              plot_bgcolor="#cfe3d7",
+              paper_bgcolor="#cfe3d7",
+              font = list(family="Arial",size=14), 
+              legend = list(orientation = "h",   # show entries horizontally
+                     xanchor = "center",  # use center of legend as anchor
+                     x = 0.5))             # put legend in center of x-axis
+              
+              
+              
+})
+
+
+
+}
+
+shinyApp(ui, server,options = list(height = 700))
+
+
+```
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+

@@ -1,0 +1,13 @@
+name: Deforestation_report_HC
+title: Deforestation_report_HC
+username:
+account: hollie-rawlings
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4427934
+bundleId: 4859623
+url: https://hollie-rawlings.shinyapps.io/Deforestation_report_HC/
+when: 1627375977.51761
+lastSyncTime: 1627375977.51841
+asMultiple: TRUE
+asStatic: FALSE
