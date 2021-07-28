@@ -101,9 +101,6 @@ soybean_farming <- soybean_farming %>%
 
 source(file = 'as_sunburst.R')
 
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
 #https://stackoverflow.com/questions/57064828/how-can-i-change-colors-of-segments-in-trace
 #https://plotly.com/r/sunburst-charts/
 

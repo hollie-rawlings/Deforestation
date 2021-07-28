@@ -1,0 +1,135 @@
+---
+title: "Deforestation"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    theme: 
+      version: 4
+      bootswatch: minty
+    source_code: embed
+---
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(janitor)
+library(data.table)
+library(shinythemes)
+library(hrbrthemes)
+library(magrittr)
+library(rvest)
+library(maps)
+library(ggiraph)
+library(RColorBrewer)
+library(gridExtra)
+library(prettydoc)
+library(rmdformats)
+library(shinyWidgets)
+library(highcharter)
+library(viridisLite)
+library(shinycssloaders)
+
+```
+
+Introduction
+===================================== 
+
+Across the world, demand for soy and soy products is surging. Soy production has increased 15 fold since 1950 and is driven by four main countries, Brazil, Argentina, China and the US. In recent years, soy has earned a poor reputation for both health and sustainability, but is this reputation justified?
+
+This report will look at the history of soy production, investigate its links to deforestation and to think about what the future of soy production looks like in a sustainable world.
+
+The ever changing demand for soy products 
+=====================================     
+
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+### How has soy demand developed in the last 50 years? 
+The production of soy foods/products has exploded over the last 50 years. This change started to occur in the early 1960's and has continued on into the 21st century. In the year 1960 global soy production sat between 20 million and 30 million tonnes per year. In 2013 this reached 350 million tonnes. This increase has coincided with a 700 million hectare forest loss worldwide (since 1950). 
+
+The drastic increase in soy production has been caused by two factors. Firstly an increase in yield per hectare (soy crops are genetically modified for higher yield and greater weather robustness) and secondly increased space for farming. Unfortunately, some of this space has been created by **deforestation**. 
+
+
+Column{data-width=800 .tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Sunburst plot
+This interactive plot shows soybean production across continents between 1965 and 2010. You can narrow down the treemap by clicking on a continent to see the soy breakdown by country and then by processing type (Soy for human foods e.g. tofu, beancurd,soymilk, soy for direct animal feed and soy for processed products e.g processed animal feed, industrial oils ect). 
+
+You will see that the four biggest soy producers in 2010 were the US, Brazil, Argentina and China. Whilst the Us and China have always been large soy producers, Brazil and Argentina are emerging soy producers. A vast majority of this soy is processed into animal feed (but not directly fed to animals) 
+
+```{r}
+
+
+```
+
+### Area plot
+This plot breaks down soy production by continent from the years 1961 to 2013. We can see that increases in soy production are driven by South America and Asia. 
+```{r}
+
+
+```
+
+Is soy production linked to deforestation?
+=====================================  
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+It has been established that soy production has dramatically increased since 1961 and this demand has been in processed soy products. The important question is how does this link to **deforestation**. 
+
+Column{data-width=800 .tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### World map 
+Here is a map of world deforestation over time.
+```{r}
+
+
+```
+
+### Brazil Forest loss
+This area chart details specific causes of forest loss in Brazil between 2001 and 2013. Every year over a million hectares of amazon is lost to pasture land, small scale farming, fire and importantly commercial crops like soy. Overall the deforestation rates of the amazon have decreased but areas are still continually cleared every year. In 2009 (marked on the graph) new legislation was announced curbing soy production on deforested land. Since then it has become evident that pasture land, not commercial crops which drive deforestation. 
+```{r}
+
+
+```
+
+What does the future of soy production look like?
+===================================== 
+
+Column{data-width=400}
+-----------------------------------------------------------------------
+This application predicts the future of soy production in every country and every production method. 
+The default selection is world where we see all facets of soy production are set to exponentially increase. 
+
+Overall it is expected that soy production will increase worldwide by 2028. This could have a devastating impact on deforestation in Brazil and Argentina and other countries around the world. 
+
+Column{data-width=800 .tabset .tabset-fade}
+-----------------------------------------------------------------------
+### Forcasting 
+
+```{r}
+
+
+```
+
+Conclusion remarks
+===================================== 
+
+Row {data-height=350}
+-----------------------------------------------------------------------
+Soy production has exponentially increased since 1961 and will continue to do so. The majority of these increases are  
+seen in Asia and South America. The majority of this crop is not eaten by humans but instead processed and fed to animals. 
+
+Looking at the deforestation causes for Brazil (the main soy producer) we see that clearing forest for pasture has a much greater impact than clearing for commercial crops, however as meat demand continues to grow, some of this pasture land is converted to soy farms. 
+
+Laws curbing soy production on deforested land have reduced the land clearance for crops, however this law only applies to Brazil and not another emerging soy producer, Argentina. 
+
+Row 
+-----------------------------------------------------------------------
+### Sankey Diagram
+
+```{r}
+
+```
