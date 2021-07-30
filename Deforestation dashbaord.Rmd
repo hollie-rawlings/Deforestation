@@ -3,10 +3,13 @@ title: "Deforestation"
 output: 
   flexdashboard::flex_dashboard:
     vertical_layout: scroll
+    horizontal_layout: scroll
+    orientation: columns
     theme: 
       version: 4
       bootswatch: minty
-    source_code: embed
+    social: menu
+runtime: shiny
 ---
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -32,6 +35,21 @@ library(shinycssloaders)
 
 ```
 
+
+```{r,include=FALSE}
+soybean_farming<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+library(bslib)
+theme <- bs_theme(
+  bg = "#0b3d91", fg = "white", primary = "#FCC780",
+  base_font = font_google("Space Mono"),
+  code_font = font_google("Space Mono")
+)
+#bs_theme_preview(theme)
+
+theme <-bs_theme_update(theme, bg = "#FFFFFF", fg = "#029232", 
+    base_font = "Arial", heading_font = "Arial", 
+    font_scale = 1.33, `enable-gradients` = TRUE, spacer = "2rem")
+```
 Introduction
 ===================================== 
 
@@ -42,82 +60,630 @@ This report will look at the history of soy production, investigate its links to
 The ever changing demand for soy products 
 =====================================     
 
-
-Column {data-width=400}
+Column{data-width=200}
 -----------------------------------------------------------------------
-### How has soy demand developed in the last 50 years? 
 The production of soy foods/products has exploded over the last 50 years. This change started to occur in the early 1960's and has continued on into the 21st century. In the year 1960 global soy production sat between 20 million and 30 million tonnes per year. In 2013 this reached 350 million tonnes. This increase has coincided with a 700 million hectare forest loss worldwide (since 1950). 
 
 The drastic increase in soy production has been caused by two factors. Firstly an increase in yield per hectare (soy crops are genetically modified for higher yield and greater weather robustness) and secondly increased space for farming. Unfortunately, some of this space has been created by **deforestation**. 
 
 
-Column{data-width=800 .tabset .tabset-fade}
+<br><br><br><br><br>  
+
+<br><br><br><br><br>  
+
+<br><br><br><br><br>  
+
+
+<br><br><br><br><br>  
+
+<br><br><br><br><br>  
+
+<br><br><br><br><br>  
+
+Column{.tabset .tabset-fade data-width=800 data_height=700}
 -----------------------------------------------------------------------
 
-### Sunburst plot
+### Sunburst plot 
 This interactive plot shows soybean production across continents between 1965 and 2010. You can narrow down the treemap by clicking on a continent to see the soy breakdown by country and then by processing type (Soy for human foods e.g. tofu, beancurd,soymilk, soy for direct animal feed and soy for processed products e.g processed animal feed, industrial oils ect). 
 
 You will see that the four biggest soy producers in 2010 were the US, Brazil, Argentina and China. Whilst the Us and China have always been large soy producers, Brazil and Argentina are emerging soy producers. A vast majority of this soy is processed into animal feed (but not directly fed to animals) 
+```{r echo=FALSE}
+continent_list <-read.csv("data/Continent_list.csv")
+
+soybean_farming <- soybean_farming %>% 
+  inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
+  select(entity,code,year,human_food,animal_feed,processed,`ï..Continent_Name`)%>%
+  rename(Continent=`ï..Continent_Name`)
+
+continent_allocation <- soybean_farming %>% select(entity,Continent)%>%
+  unique()
+## These countries are 	Armenia,Azerbaijan,Cyprus,Georgia,Kazakhstan,Russia,Turkey 
+## There are not many, so I can use a case when to recode them. 
+## I'm no geography expert so I may not be right, If this were go go in a paper I would have to include a footnote about these allocations
+
+soybean_farming <- soybean_farming %>% 
+  mutate(Continent = case_when(
+    entity == "Armenia" ~ "Europe",
+    entity == "Azerbaijan" ~ "Asia", 
+    entity == "Cyprus" ~ "Europe", 
+    entity == "Georgia" ~ "Asia", 
+    entity == "Kazakhstan" ~ "Asia", 
+    entity == "Russia" ~ "Europe", 
+    entity == "Turkey" ~ "Europe", 
+    TRUE ~ Continent
+  ))%>%
+  unique()
+
+
+## Function for building enginering data into the sunburst plot (its a real pain to get data in this format, ill keep note of this for the future) 
+
+source(file = 'as_sunburst.R')
+
+```
 
 ```{r}
+#https://stackoverflow.com/questions/57064828/how-can-i-change-colors-of-segments-in-trace
+#https://plotly.com/r/sunburst-charts/
 
 
+ui <- fluidPage(
+  theme = theme,
+    setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+      
+  sidebarLayout(
+
+    sidebarPanel(
+         tags$head(tags$style("#sidebar{
+                             color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
+      selectInput("years", label = h3("Choose Year"), 
+            choices = list("1965" = 1965, "1970" = 1970,"1975"=1975,"1980"=1980, "1985"=1985,"1990"=1990,"1995"=1995,"2000"=2000,"2005"=2005,"2010"=2010), 
+            selected = 1990)),
+    mainPanel(
+    br(), 
+    br(), 
+    br(), 
+    plotlyOutput("radialtree") %>% withSpinner(color="#09bd42"), 
+    br())
+    
+     )
+        )
+
+server <- function(input, output, session){
+reactive_soybean_farming_sun <- reactive({ 
+                                        soybean_farming %>%
+                                        filter(year ==input$years)%>%
+                                        select(-code)%>%
+                                        rename(`human food` = human_food, `animal feed` = animal_feed)%>%
+                                        pivot_longer(cols =c(`human food`,`animal feed`,processed))%>%
+                                        filter(value != 0)%>%
+                                        select(Continent,entity,name,value)%>%
+                                        as.sunburstDF(.,valueCol = "value")%>%
+                                        mutate(color = case_when(
+                                          str_detect(ids,"Europe") ~ "#ACDF87", 
+                                          str_detect(ids,"Asia") ~ "#1E5631",
+                                          str_detect(ids,"North America") ~ "#A4DE02",
+                                          str_detect(ids,"South America") ~ "#D2E95E",
+                                          str_detect(ids,"Africa") ~ "#4C9A2A",
+                                          str_detect(ids,"Oceania") ~ "#15AA66",
+                                          TRUE ~ "NA"
+                                        ))  
+                                        
+## somehow need to change colours
+}
+)
+
+output$radialtree <-renderPlotly({
+  
+  
+plot_ly(data = reactive_soybean_farming_sun(), 
+        ids = ~ids, 
+        labels= ~labels, 
+        parents = ~parents, 
+        values= ~values ,
+        type='sunburst',
+        maxdepth=2 ,
+        branchvalues = 'total',
+        insidetextorientation='radial',
+        marker = list(colors= ~color), 
+        textfont = list(family="Arial",size=16), 
+        insidetextfont=list(family="Arial",size=16))%>% 
+        layout(
+              showlegend = TRUE,
+              title = list(text = 'Soybean production by country <br> (metric tonnes per year)') , 
+              autosize = F, 
+              height = 700, 
+              width=700,
+              margin = list(l=100, r=100, b=100, t=100, pad=4),
+              titlefont=list(size=24,family ="Arial",colour = "#002611"),
+              plot_bgcolor="#cfe3d7",
+              paper_bgcolor="#cfe3d7",
+              font = list(family="Arial",size=14), 
+              legend = list(orientation = "h",   # show entries horizontally
+                     xanchor = "center",  # use center of legend as anchor
+                     x = 0.5))             # put legend in center of x-axis
+              
+              
+              
+})
+
+
+
+}
+
+shinyApp(ui, server, options=list(height=800,width=1200))
 ```
 
 ### Area plot
 This plot breaks down soy production by continent from the years 1961 to 2013. We can see that increases in soy production are driven by South America and Asia. 
 ```{r}
+my_own_theme <- hc_theme(
+  colors = c("#ACDF87", "#1E5631", "#A4DE02", "#D2E95E","#4C9A2A","#15AA66"),
+  
+  chart = list(
+    backgroundColor = "#cfe3d7", 
+    borderWidth = 4, 
+    borderColor = "#015927"
 
+  ), 
+  title = list(
+    style = list(
+      color = "#002611",
+      fontFamily = "Arial", 
+      fontSize = "24px"
+    )
+  ), 
+    subtitle = list(
+    style = list(
+      color = "#004a20",
+      fontFamily = "Arial", 
+      fontSize = "18px"
+    )
+  ),
+   legend = list(
+    itemStyle = list(
+      fontFamily = "Arial",
+      color = "#014f23", 
+      fontSize = "14px"
+    ),
+    itemHoverStyle = list(
+      color = "#8db39d"
+    )
+  )
+
+  )
+
+
+
+ui =    fluidPage(
+            theme=theme,
+             setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+
+            sidebarLayout(
+                sidebarPanel(          
+                tags$head(tags$style("#sidebar{
+                             color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
+                                sliderInput("years_slide",
+                                label =  h3("Choose year range"),
+                                min = 1961,
+                                max = 2013,
+                                value = c(2000,2010),sep = "")
+                ),
+            mainPanel(
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('areachart',height=600, width=700) %>% withSpinner(color="#09bd42"), 
+              br()
+            ) 
+
+))
+  
+server = function(input, output, session){
+  reactive_soybean_farming_area <- reactive({ 
+                                        soybean_farming %>%
+                                        mutate(across(human_food:processed, ~replace_na(.x,0)))%>%
+                                        filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
+                                        select(-code)%>%
+                                        group_by(Continent,year)%>%
+                                        mutate(Total = sum(human_food ,animal_feed,processed))%>%
+                                        ungroup()%>%
+                                        select(-entity,-human_food,-animal_feed,-processed)%>%
+                                        unique()
+})         
+  output$areachart <- renderHighchart({
+    reactive_soybean_farming_area() %>%
+    hchart('area', hcaes(x = 'year', y = 'Total', group = "Continent")) %>%
+      hc_plotOptions(series = list(stacking = 'normal'),
+                 area =list(
+                             marker=list(
+                               enabled = FALSE))) %>%
+        hc_title(text = "Soybean production by continent") %>% 
+        hc_subtitle(text = "Output in metric tonnes") %>%
+        hc_add_theme(my_own_theme) %>% 
+        hc_xAxis(
+        title = list(text = "Year",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px"))) %>% 
+        hc_yAxis(
+        title = list(text = "Total production (tonnes)",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px")))
+                          
+    
+})
+}
+
+shinyApp(ui, server,options=list(height=800,width=1200))
 
 ```
 
 Is soy production linked to deforestation?
 =====================================  
 
-Column {data-width=400}
+Column{data-width=200}
 -----------------------------------------------------------------------
 It has been established that soy production has dramatically increased since 1961 and this demand has been in processed soy products. The important question is how does this link to **deforestation**. 
 
-Column{data-width=800 .tabset .tabset-fade}
+Column{.tabset .tabset-fade data-width=800}
 -----------------------------------------------------------------------
 
 ### World map 
 Here is a map of world deforestation over time.
 ```{r}
+library(sf)
+library(highcharter) 
 
+forest_area <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/forest_area.csv')
+data(worldgeojson, package = "highcharter")
+
+ui =  fluidPage(
+          theme = theme,
+           setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+
+          sidebarLayout(
+              sidebarPanel(          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    id="sidebar",
+
+                            sliderInput("years_slide",
+                            label =  h3("Choose year"),
+                            min = 1990,
+                            max = 2020,
+                            value = c(2000),sep = "")),
+            mainPanel(
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('world_map',height=600)%>% withSpinner(color="#09bd42"), 
+              br()
+            ) 
+))
+server <- function(input, output) {
+
+
+  
+forest_react <- reactive({
+                          forest_area %>%
+                                          filter(!is.na(code))%>%
+                                          filter(year==input$years_slide)%>%
+                                          mutate(forest_area = round(forest_area,3))
+})
+
+output$world_map <-renderHighchart({
+  
+  hcmap( map = "custom/world",
+    download_map_data = getOption("highcharter.download_map_data"),
+    data = forest_react(),
+    name ="Forest cover as percentage of total land mass", 
+    value= "forest_area", 
+    joinBy = c("iso-a3", "code"), 
+    borderWidth = 0,
+    nullColor = "#d3d3d3") %>%
+  hc_colorAxis(
+    min = 0, 
+    max = 30, 
+    stops = color_stops(n=30,colors = viridisLite::viridis(256,begin=0.3,end=0.9))
+    ) %>% 
+  hc_title(text = "World Map") %>% 
+  hc_subtitle(text = "Forest cover by percentage (%)") %>%
+  hc_add_theme(my_own_theme)%>% 
+  #hc_tooltip(formatter = "{value}%")%>%
+  hc_exporting(enabled=TRUE) %>%
+  hc_legend(name="Forest cover as percenatge total land mass (%)")
+
+})}
+shinyApp(ui, server)
 
 ```
 
 ### Brazil Forest loss
 This area chart details specific causes of forest loss in Brazil between 2001 and 2013. Every year over a million hectares of amazon is lost to pasture land, small scale farming, fire and importantly commercial crops like soy. Overall the deforestation rates of the amazon have decreased but areas are still continually cleared every year. In 2009 (marked on the graph) new legislation was announced curbing soy production on deforested land. Since then it has become evident that pasture land, not commercial crops which drive deforestation. 
 ```{r}
+brazil_loss <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/brazil_loss.csv')
 
+ui =    fluidPage(
+            theme = theme,
+             setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),
+
+            sidebarLayout(
+                sidebarPanel(          tags$head(tags$style("#sidebar{color: white;font-size: 20px;font-family: Arial;}", 
+                                                            ".irs-grid-text {font-family: 'arial'; color: white; bottom: 17px;z-index:1;}"
+                     )
+    ),
+    id="sidebar",
+                  sliderInput("years_slide",
+                                label =  h3("Choose year range"),
+                                min = 2001,
+                                max = 2013,
+                                value = c(2001,2005),sep="")
+                ),
+            mainPanel(
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('areachartbrazil', height = 600) %>% withSpinner(color="#09bd42"), 
+              br()
+            ) 
+
+))
+  
+server = function(input, output, session){
+  reactive_brazil_forest_loss<- reactive({ 
+                                        brazil_loss %>%
+                                        filter(.,between(year,input$years_slide[1],input$years_slide[2]))%>%
+                                        pivot_longer(cols=commercial_crops:small_scale_clearing,names_to="type",values_to="value")%>%
+                                        mutate(type=str_to_sentence(type,locale ="en"))%>%
+                                        mutate(type = str_replace_all(type,"_"," "))
+})         
+
+  output$areachartbrazil<- renderHighchart({
+    reactive_brazil_forest_loss() %>%
+    hchart('area', hcaes(x = 'year', y = 'value', group = "type")) %>%
+      hc_plotOptions(series = list(stacking = 'normal')) %>%
+        hc_title(text = "Forest loss in Brazil") %>% 
+        hc_subtitle(text = "Measured in hectares (ha)") %>%
+    hc_add_theme(my_own_theme) %>%
+    hc_colors(c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99")) %>% 
+    hc_xAxis(
+        title = list(text = "Year",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px"))) %>% 
+    hc_yAxis(
+        title = list(text = "Total Clearence in hectares (ha)",fontSize = "16px"), 
+        labels = list(
+        style = list(
+        color = "#015927",
+        fontFamily = "Arial", 
+        fontSize = "14px"))) %>% 
+     hc_plotOptions(series = list(
+                             marker=list(
+                               enabled = FALSE)), 
+                 area =list(
+                             marker=list(
+                               enabled = FALSE))) %>%
+    hc_exporting(enabled=TRUE)
+
+})
+}
+
+shinyApp(ui, server)
 
 ```
 
 What does the future of soy production look like?
 ===================================== 
 
-Column{data-width=400}
+Column{data-width=350}
 -----------------------------------------------------------------------
 This application predicts the future of soy production in every country and every production method. 
 The default selection is world where we see all facets of soy production are set to exponentially increase. 
 
 Overall it is expected that soy production will increase worldwide by 2028. This could have a devastating impact on deforestation in Brazil and Argentina and other countries around the world. 
 
-Column{data-width=800 .tabset .tabset-fade}
+Column{data-width=800}
 -----------------------------------------------------------------------
 ### Forcasting 
 
-```{r}
+```{r include=FALSE}
+## Bit of a data explore to find a suitable prediction model
 
+soybean_farming<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+library(caret)
 
+soybean_farming <- soybean_farming %>% 
+  inner_join(continent_list,by=c("code"="Three_Letter_Country_Code"))%>%
+  select(entity,code,year,human_food,animal_feed,processed,`ï..Continent_Name`)%>%
+  rename(Continent=`ï..Continent_Name`)
+
+continent_allocation <- soybean_farming %>% select(entity,Continent)%>%
+  unique()
+## These countries are 	Armenia,Azerbaijan,Cyprus,Georgia,Kazakhstan,Russia,Turkey 
+## There are not many, so I can use a case when to recode them. 
+## I'm no geography expert so I may not be right, If this were go go in a paper I would have to include a footnote about these allocations
+
+soybean_farming <- soybean_farming %>% 
+  mutate(Continent = case_when(
+    entity == "Armenia" ~ "Europe",
+    entity == "Azerbaijan" ~ "Asia", 
+    entity == "Cyprus" ~ "Europe", 
+    entity == "Georgia" ~ "Asia", 
+    entity == "Kazakhstan" ~ "Asia", 
+    entity == "Russia" ~ "Europe", 
+    entity == "Turkey" ~ "Europe", 
+    TRUE ~ Continent
+  ))%>%
+  unique()
+
+human <-ggplot(soybean_farming,aes(x=year,y=human_food,color=entity))+
+  geom_line()+
+  theme(legend.position = "none")
+
+animal <-ggplot(soybean_farming,aes(x=year,y=animal_feed,color=entity))+
+  geom_line()+
+  theme(legend.position = "none")
+
+processed <-ggplot(soybean_farming,aes(x=year,y=processed,color=entity))+
+  geom_line()+
+  theme(legend.position = "none")
+
+grid.arrange(human, animal,processed,nrow = 3)
 ```
 
-Conclusion remarks
+```{r include=FALSE}
+library(forecast)
+library(xts)
+library(ggfortify)
+## Humans
+human_split <- soybean_farming %>% 
+                select(-processed,-animal_feed)
+human_split$entity <-as.factor(human_split$entity)
+human_split <- split(human_split,human_split$entity)
+
+
+#Animals
+animal_split <- soybean_farming %>% 
+                select(-processed,-human_food)
+animal_split$entity <-as.factor(animal_split$entity)
+animal_split <- split(animal_split,animal_split$entity)
+
+
+#Processed
+processed_split <- soybean_farming %>% 
+                select(-human_food,-animal_feed) 
+processed_split$entity <-as.factor(processed_split$entity)
+processed_split <- split(processed_split,processed_split$entity)
+
+```
+This application predicts the future of soy production in every country and every production method. 
+The default selection is world where we see all facets of soy production are set to exponentially increase. 
+
+Overall it is expected that soy production will increase worldwide by 2028. This could have a devastating impact on deforestation in Brazil and Argentina and other countries around the world. 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(xts)
+ui =  fluidPage(
+          theme = theme,
+           setBackgroundImage(
+    src = "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  ),       
+
+          sidebarLayout(
+              sidebarPanel(          tags$head(
+                                            tags$style("#sidebar{color: white;font-size: 20px;font-family: Arial;}",
+                                                       ".irs-grid-text {font-family: 'arial'; color: white; bottom: 17px; z-index: 1;}"
+                     )
+    ),
+    id="sidebar",
+                            
+                            selectInput("consumption", label = h3("Select production type"), 
+                            choices = list("Human Food" = "human_split", "Direct animal feed" = "animal_split",
+                            "Processed products" = "processed_split"), selected = 1),
+                            
+                            selectInput("contry", label = h3("Select country"), 
+                            choices = unique(soybean_farming$entity), selected = "Brazil")
+                ),
+            mainPanel(
+              br(), 
+              br(), 
+              br(), 
+              highchartOutput('plot') %>% withSpinner(color="#09bd42"), 
+              br()
+            ) 
+))
+server = function(input, output, session){
+
+
+  
+datasetInput <- reactive({
+  switch(input$consumption, 
+         "human_split" = human_split, 
+         "animal_split" = animal_split, 
+         "processed_split" = processed_split)
+})
+
+
+filtered_data <- reactive({
+  data <- datasetInput()
+  data[[input$contry]]
+    
+})
+
+output$plot <-renderHighchart({
+  data <-filtered_data()
+  ## change years to date objects 
+  year_axis <- as.Date(paste(data$year, 1, 1, sep = "-"))
+  name <- unique(data$entity)
+  data$entity <-NULL
+  data$code <- NULL
+  data$Continent <-NULL
+  data$year <- NULL
+  time_series <- ts(data,frequency=1,start=1961,end=2013)
+  holt_winters <- HoltWinters(time_series,gamma=FALSE)
+  x <- forecast(holt_winters, level = c(95, 80))
+  df <- fortify(x)
+  df <-pivot_longer(df,cols=c(Data,	
+Fitted, `Point Forecast`),names_to = "Model",values_to = "Values")
+  hchart(df,'spline',hcaes(x = 'Index', y = 'Values', group = "Model")) %>% 
+  hc_add_series(df, "arearange", hcaes(Index, low = `Lo 80`, high = `Hi 80`), name = "Confidence Interval",
+                               marker=list(
+                               enabled = FALSE)) %>%
+  hc_title(text = "Predictions of Soy consumption") %>% 
+  hc_subtitle(text = "Using a HoltWinters model to predict soy consumption by type <br> untill 2023") %>%
+  hc_colors(c("#00470e", "#7d1100", "#ff2b2b","#fab1b1")) %>%
+  hc_add_theme(my_own_theme)%>%
+  hc_xAxis(min = 1961) %>%
+  hc_plotOptions(spline = list(
+                             marker=list(
+                               enabled = FALSE)), 
+                 area =list(
+                             marker=list(
+                               enabled = FALSE))) %>%
+  hc_exporting(enabled=TRUE) %>% 
+  hc_legend(enabled = TRUE)
+
+})
+
+
+}
+shinyApp(ui, server)
+```
+
+Conclusion remarks {data-orientation=rows}
 ===================================== 
 
-Row {data-height=350}
+Row {data-height=200}
 -----------------------------------------------------------------------
 Soy production has exponentially increased since 1961 and will continue to do so. The majority of these increases are  
 seen in Asia and South America. The majority of this crop is not eaten by humans but instead processed and fed to animals. 
@@ -126,10 +692,60 @@ Looking at the deforestation causes for Brazil (the main soy producer) we see th
 
 Laws curbing soy production on deforested land have reduced the land clearance for crops, however this law only applies to Brazil and not another emerging soy producer, Argentina. 
 
-Row 
+Row {data-height=800}
 -----------------------------------------------------------------------
 ### Sankey Diagram
+Soy is an excellent source of protein, maybe we could just eat it ourselves? 
 
+In one 1kg of soy beans a human could digest 124.5g of protein. If that 1kg of soy was fed to a cow it would provide a human with 9 grams of protein. This means for the same amount of protein, eating beef takes up 10x more land. 
 ```{r}
+# Library
+data <- read.csv("data/sankey energy data .csv",row.names=1,header=TRUE)
 
+# Transform it to connection data frame with tidyr from the tidyverse:
+links <- data %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var="source") %>% 
+  gather(key="target", value="value", -1) %>%
+  filter(value != 0)
+ 
+
+ui <- fluidPage(
+    theme = theme,
+          tags$head(tags$style("#sidebar{color: white;
+                             font-size: 20px;
+                             font-family: Arial;
+                         }"
+                     )
+    ),
+    
+    # Boxes need to be put in a row (or column)
+     
+    fluidRow(
+      tags$head(tags$style('.col-sm-6 {padding-left: 0px; padding-right: 0px ;}')),
+      highchartOutput("plot", height=500, width=1000) %>% withSpinner(color="#09bd42")
+
+  ))
+
+
+server <- function(input, output) {
+
+data <- links %>% 
+                  arrange(match(target, c("pork", "beef", "chicken","lamb","egg","human")),value) %>%
+                  rename(from = source , to = target , weight = value)
+  
+  output$plot <- renderHighchart({
+  highchart() %>%
+  hc_chart(type = 'sankey') %>%
+  hc_add_series(data = data) %>% 
+            hc_title(text = "Protien transfer from different energy sources") %>% 
+            hc_subtitle(text = "Measured in grams (g)") %>%
+      hc_add_theme(my_own_theme)%>%  
+      hc_exporting(enabled=TRUE) 
+      #hc_size(width=800, height=800)
+
+  })
+
+}
+shinyApp(ui, server)
 ```
