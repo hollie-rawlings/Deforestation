@@ -1,0 +1,24 @@
+---
+title: "Data processing for amCharts sunburst"
+author: "Hollie Rawlings"
+date: "10/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data call 
+
+```{r cars}
+continent_list <-read.csv("data/Continent_list.csv")
+soybean_farming<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/soybean_use.csv')
+```
+
+## Data proprocessing 
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
