@@ -1,7 +1,7 @@
 # Deforestation
 This is the tidy tuesday deforestation project
 
-##Aims for this project 
+## Aims for this project 
 1. Create a nice project README 
 2. Do all of the data preporcessing exclusivly using dplyr 
 3. Create some basic and functional shiny applications and embed them in this markdown document 
